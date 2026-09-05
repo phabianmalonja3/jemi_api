@@ -1,0 +1,142 @@
+spring:
+  application:
+    name: jemigraph_backend
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_EMAIL}
+    password: ${SMTP_EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  profiles:
+    active: dev
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2MB
+      location: uploads/
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - file:uploads/
+        - file:./uploads/
+      cache:
+        period: 3600
+      add-mappings: true
+
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION:7776000000}
+
+server:
+  servlet:
+    context-path: ${SERVER_PATH:/api/v0.1}
+  address: 0.0.0.0
+  port: 8080
+
+spring doc:
+  swagger-ui:
+    path: ${API_DOC:/swagger-ui.html}
+    use-root-path: true
+app:
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://172.20.10.2:3000}
+  settings:
+    commission-rate: 0.10
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+web:
+  frontend-url: ${WEB_URL:http://localhost:3000}
+
+commission:
+  rate: 0.1
+
+logging:
+  level:
+    org:
+      springframework:
+        messaging: TRACE
+        web: DEBUG
+        springframework:
+          web:
+                      servlet:
+                        mvc:
+                          method:
+                            annotation: DEBUG
+upload:
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - webp
+    - gif
+
+  max-file-size: 5242880
+
+  image:
+    width: 500
+    height: 500
+    quality: 80
+
+  dir: uploads/
+
+
+  file:
+    name: logs/jemigraph.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+file:
+  upload-dir: uploads/
+
+moniker:
+  api:
+    key: mk_e30f8cc15b26d1b37fd2743be7c3e49810ff8e5df7a2584d
+
+cashpay:
+  username: ${CASHPAY_USERNAME}
+  password: ${CASHPAY_PASSWORD}
+  base-url: ${CASHPAY_BASE_URL}
+
+webline:
+  sms:
+    api-token: ${WEBLINE_API_TOKEN}
+    base-url: ${WEBLINE_BASE_URL}
+    sender-id: ${WEBLINE_SENDER_ID}
+    type: ${WEBLINE_SMS_TYPE:plain}
