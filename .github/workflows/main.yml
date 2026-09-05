@@ -47,9 +47,9 @@ jobs:
           sshpass -p "$SERVER_PASSWORD" scp \
             -o StrictHostKeyChecking=no \
             deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar \
-            "$SERVER_USER@$SERVER_HOST:/var/www/html/backend/deploy/"
+            "$SERVER_USER@$SERVER_HOST:/var/www/html/backend/deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar"
 
-      - name: Deploy and restart
+      - name: Deploy application
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -72,34 +72,37 @@ jobs:
               sudo cp "$CURRENT_JAR" "$BACKUP_JAR"
             fi
 
-            echo "Stopping application..."
+            echo "Stopping Jemigraph backend..."
 
             sudo systemctl stop jemigraph-backend.service
 
-            echo "Installing new JAR..."
+            echo "Replacing JAR..."
 
             sudo mv "$NEW_JAR" "$CURRENT_JAR"
 
-            echo "Starting application..."
+            echo "Starting Jemigraph backend..."
 
             sudo systemctl start jemigraph-backend.service
 
-            echo "Waiting for application..."
+            echo "Waiting for service..."
 
             sleep 10
 
-            echo "Checking service..."
+            echo "Checking service status..."
 
             if sudo systemctl is-active --quiet jemigraph-backend.service; then
 
-              echo "Deployment successful!"
+              echo "======================================"
+              echo "DEPLOYMENT SUCCESSFUL"
+              echo "======================================"
 
               rm -f "$BACKUP_JAR"
 
             else
 
-              echo "Deployment failed!"
-              echo "Rolling back..."
+              echo "======================================"
+              echo "DEPLOYMENT FAILED - ROLLING BACK"
+              echo "======================================"
 
               sudo systemctl stop jemigraph-backend.service
 
