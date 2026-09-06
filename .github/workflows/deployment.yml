@@ -1,88 +1,88 @@
-name: Build and Deploy Jemigraph Backend
-
-on:
-  push:
-    branches:
-      - main
-
-  workflow_dispatch:
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Make Maven executable
-        run: chmod +x mvnw
-
-      - name: Build Spring Boot JAR
-        run: ./mvnw clean package -DskipTests
-
-      - name: Prepare JAR
-        run: |
-          mkdir -p deploy
-          cp target/*.jar deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar
-
-      - name: Install sshpass
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
-
-      - name: Upload JAR
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -p "$SERVER_PASSWORD" scp \
-            -o StrictHostKeyChecking=no \
-            deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar \
-            "$SERVER_USER@$SERVER_HOST:/var/www/html/backend/jemigraph_backend-0.0.1-SNAPSHOT.jar"
-
-      - name: Restart Spring Boot
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -p "$SERVER_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            "$SERVER_USER@$SERVER_HOST" << 'EOF'
-
-            set -e
-
-            echo "Restarting Jemigraph backend..."
-
-            systemctl restart jemigraph-backend.service
-
-            echo "Waiting for application..."
-
-            sleep 10
-
-            echo "Checking service..."
-
-            if systemctl is-active --quiet jemigraph-backend.service; then
-              echo "======================================"
-              echo "DEPLOYMENT SUCCESSFUL"
-              echo "======================================"
-            else
-              echo "======================================"
-              echo "DEPLOYMENT FAILED"
-              echo "======================================"
-
-              systemctl status jemigraph-backend.service --no-pager
-
-              exit 1
-            fi
-
-            EOF
+#name: Build and Deploy Jemigraph Backend
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#
+#  workflow_dispatch:
+#
+#jobs:
+#  build-and-deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout source
+#        uses: actions/checkout@v4
+#
+#      - name: Setup Java 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#          cache: maven
+#
+#      - name: Make Maven executable
+#        run: chmod +x mvnw
+#
+#      - name: Build Spring Boot JAR
+#        run: ./mvnw clean package -DskipTests
+#
+#      - name: Prepare JAR
+#        run: |
+#          mkdir -p deploy
+#          cp target/*.jar deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar
+#
+#      - name: Install sshpass
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y sshpass
+#
+#      - name: Upload JAR
+#        env:
+#          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+#          SERVER_USER: ${{ secrets.SERVER_USER }}
+#          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+#        run: |
+#          sshpass -p "$SERVER_PASSWORD" scp \
+#            -o StrictHostKeyChecking=no \
+#            deploy/jemigraph_backend-0.0.1-SNAPSHOT.jar \
+#            "$SERVER_USER@$SERVER_HOST:/var/www/html/backend/jemigraph_backend-0.0.1-SNAPSHOT.jar"
+#
+#      - name: Restart Spring Boot
+#        env:
+#          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+#          SERVER_USER: ${{ secrets.SERVER_USER }}
+#          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+#        run: |
+#          sshpass -p "$SERVER_PASSWORD" ssh \
+#            -o StrictHostKeyChecking=no \
+#            "$SERVER_USER@$SERVER_HOST" << 'EOF'
+#
+#            set -e
+#
+#            echo "Restarting Jemigraph backend..."
+#
+#            systemctl restart jemigraph-backend.service
+#
+#            echo "Waiting for application..."
+#
+#            sleep 10
+#
+#            echo "Checking service..."
+#
+#            if systemctl is-active --quiet jemigraph-backend.service; then
+#              echo "======================================"
+#              echo "DEPLOYMENT SUCCESSFUL"
+#              echo "======================================"
+#            else
+#              echo "======================================"
+#              echo "DEPLOYMENT FAILED"
+#              echo "======================================"
+#
+#              systemctl status jemigraph-backend.service --no-pager
+#
+#              exit 1
+#            fi
+#
+#            EOF
