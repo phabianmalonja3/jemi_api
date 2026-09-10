@@ -89,19 +89,15 @@ public class EmailServiceImpl implements EmailService {
       System.err.println("Failed to send email: " + e.getMessage());
     }
   }
-
   @Override
   public void sendPaymentRequest() {}
-
   @Override
   @Async
   public void sendVerification(PhotographerVerifiedEvent event) {
     User user = event.user();
-
     try {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
       helper.setFrom("noreply@jemigraph.co.tz");
       helper.setTo(user.getEmail());
       helper.setSubject("Account Verified - Welcome to Jemigraph!");
