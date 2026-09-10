@@ -89,8 +89,10 @@ public class EmailServiceImpl implements EmailService {
       System.err.println("Failed to send email: " + e.getMessage());
     }
   }
+
   @Override
   public void sendPaymentRequest() {}
+
   @Override
   @Async
   public void sendVerification(PhotographerVerifiedEvent event) {
