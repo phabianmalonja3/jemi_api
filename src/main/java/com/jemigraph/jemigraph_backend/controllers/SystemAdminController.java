@@ -4,19 +4,16 @@ import com.jemigraph.jemigraph_backend.DTO.BookingResponseDTO;
 import com.jemigraph.jemigraph_backend.DTO.SubscriberResponseDto;
 import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
-import com.jemigraph.jemigraph_backend.Entities.Transaction;
 import com.jemigraph.jemigraph_backend.Entities.User;
-import com.jemigraph.jemigraph_backend.Entities.Wallet;
-import com.jemigraph.jemigraph_backend.enums.TransactionType;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
-import com.jemigraph.jemigraph_backend.enums.WalletType;
 import com.jemigraph.jemigraph_backend.repositories.TransactionRepository;
 import com.jemigraph.jemigraph_backend.repositories.WalletRepository;
 import com.jemigraph.jemigraph_backend.services.AdminService;
 import com.jemigraph.jemigraph_backend.services.BookingService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
-import io.jsonwebtoken.io.IOException;
-import jakarta.servlet.http.HttpServletResponse;
+import com.jemigraph.jemigraph_backend.services.SessionService;
+import java.security.Principal;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,17 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.security.Principal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -44,14 +31,15 @@ public class SystemAdminController {
     private final AdminService adminService;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-private final BookingService bookingService;
-private final PaymentSystemService paymentSystemService;
+    private final BookingService bookingService;
+    private final PaymentSystemService paymentSystemService;
+    private final SessionService sessionService;
 
     @PatchMapping("/suspend-account/{userId}")
     public ResponseEntity<?> suspendAccount(@PathVariable UUID userId) {
         try {
             User updatedUser = adminService.accountSuspension(userId);
-            return ResponseEntity.ok(updatedUser); // Return user object, sio string
+            return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", e.getMessage()));
@@ -61,7 +49,7 @@ private final PaymentSystemService paymentSystemService;
     @DeleteMapping("/remove-account/{userId}")
     public ResponseEntity<?> deleteAccount(@PathVariable UUID userId) {
         try {
-            return ResponseEntity.ok().build(); // Return user object, sio string
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", e.getMessage()));
@@ -76,7 +64,7 @@ private final PaymentSystemService paymentSystemService;
             @RequestParam(defaultValue = "name") String sort,
             @RequestParam(defaultValue = "asc") String order,
             @RequestParam(required = false) UserRole role
-            ) {
+    ) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(order), sort));
         return ResponseEntity.ok(adminService.findFilteredUsers(name, role, pageable));
@@ -122,5 +110,42 @@ private final PaymentSystemService paymentSystemService;
     public ResponseEntity<List<SubscriberResponseDto>> getAllSubscribers() {
         List<SubscriberResponseDto> subscribers = paymentSystemService.getAllSubscribers();
         return ResponseEntity.ok(subscribers);
+    }
+
+   
+    /** Get all active sessions mapped by user ID. */
+    @GetMapping("/sessions")
+    public ResponseEntity<Map<UUID, Map<Object, Object>>> getAllActiveSessions() {
+        return ResponseEntity.ok(sessionService.getAllActiveSessions());
+    }
+
+    /** Get a list of all user IDs with active sessions. */
+    @GetMapping("/sessions/users")
+    public ResponseEntity<List<UUID>> getActiveUsers() {
+        return ResponseEntity.ok(sessionService.getActiveUsers());
+    }
+
+    /** Get session information using email or username identifier. */
+    @GetMapping("/sessions/identifier/{identifier}")
+    public ResponseEntity<Map<Object, Object>> getSessionByIdentifier(@PathVariable String identifier) {
+        Map<Object, Object> session = sessionService.getSessionByIdentifier(identifier);
+        if (session.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(session);
+    }
+
+    /** Clear a specific user's session using their UUID. */
+    @DeleteMapping("/sessions/user/{userId}")
+    public ResponseEntity<Void> clearUserSession(@PathVariable UUID userId) {
+        sessionService.clearUserSession(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Clear a session using email or username identifier. */
+    @DeleteMapping("/sessions/identifier/{identifier}")
+    public ResponseEntity<Void> clearSessionByIdentifier(@PathVariable String identifier) {
+        sessionService.clearSessionByIdentifier(identifier);
+        return ResponseEntity.noContent().build();
     }
 }

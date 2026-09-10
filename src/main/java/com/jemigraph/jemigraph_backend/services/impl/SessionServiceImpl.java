@@ -3,10 +3,7 @@ package com.jemigraph.jemigraph_backend.services.impl;
 import com.jemigraph.jemigraph_backend.services.SessionService;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -20,11 +17,9 @@ public class SessionServiceImpl implements SessionService {
 
   private static final String SESSION_PREFIX = "session:";
   private static final String USER_SESSION_PREFIX = "session:user:";
-  private final StringRedisTemplate redisTemplate;
+  private static final String IDENTIFIER_PREFIX = "session:identifier:";
 
-  // ============================================================
-  // KEYS
-  // ============================================================
+  private final StringRedisTemplate redisTemplate;
 
   private String getSessionKey(String sessionId) {
     return SESSION_PREFIX + sessionId;
@@ -112,6 +107,15 @@ public class SessionServiceImpl implements SessionService {
      * Map user -> active session.
      */
     redisTemplate.opsForValue().set(userSessionKey, sessionId, SESSION_TTL);
+
+    /*
+     * Map email/identifier -> userId to allow lookup by email/username.
+     */
+    if (email != null && !email.isBlank()) {
+      redisTemplate
+          .opsForValue()
+          .set(IDENTIFIER_PREFIX + email.toLowerCase().trim(), userId.toString(), SESSION_TTL);
+    }
 
     return sessionId;
   }
@@ -206,9 +210,16 @@ public class SessionServiceImpl implements SessionService {
     String sessionId = redisTemplate.opsForValue().get(userSessionKey);
 
     /*
-     * Delete actual session.
+     * Delete actual session and cleanup identifier mapping.
      */
     if (sessionId != null && !sessionId.isBlank()) {
+      Map<Object, Object> sessionData =
+          redisTemplate.opsForHash().entries(getSessionKey(sessionId));
+      String email = (String) sessionData.get("email");
+
+      if (email != null && !email.isBlank()) {
+        redisTemplate.delete(IDENTIFIER_PREFIX + email.toLowerCase().trim());
+      }
 
       redisTemplate.delete(getSessionKey(sessionId));
     }
@@ -256,5 +267,91 @@ public class SessionServiceImpl implements SessionService {
     redisTemplate.expire(sessionKey, SESSION_TTL);
 
     redisTemplate.expire(getUserSessionKey(userId), SESSION_TTL);
+  }
+
+  // ============================================================
+  // ADMIN FUNCTIONS
+  // ============================================================
+
+  @Override
+  public void clearUserSession(UUID userId) {
+    if (userId == null) {
+      return;
+    }
+    invalidateSession(userId);
+  }
+
+  @Override
+  public List<UUID> getActiveUsers() {
+    List<UUID> activeUsers = new ArrayList<>();
+    Set<String> keys = redisTemplate.keys(USER_SESSION_PREFIX + "*");
+
+    if (keys != null && !keys.isEmpty()) {
+      for (String key : keys) {
+        String userIdStr = key.replace(USER_SESSION_PREFIX, "");
+        try {
+          activeUsers.add(UUID.fromString(userIdStr));
+        } catch (IllegalArgumentException e) {
+          // Ignored if key format mismatches
+        }
+      }
+    }
+
+    return activeUsers;
+  }
+
+  @Override
+  public Map<UUID, Map<Object, Object>> getAllActiveSessions() {
+    Map<UUID, Map<Object, Object>> allSessions = new HashMap<>();
+    List<UUID> activeUserIds = getActiveUsers();
+
+    for (UUID userId : activeUserIds) {
+      Map<Object, Object> sessionData = getSession(userId);
+      if (!sessionData.isEmpty()) {
+        allSessions.put(userId, sessionData);
+      }
+    }
+
+    return allSessions;
+  }
+
+  @Override
+  public void clearSessionByIdentifier(String identifier) {
+    if (identifier == null || identifier.isBlank()) {
+      return;
+    }
+
+    String userIdStr =
+        redisTemplate.opsForValue().get(IDENTIFIER_PREFIX + identifier.toLowerCase().trim());
+
+    if (userIdStr != null && !userIdStr.isBlank()) {
+      try {
+        UUID userId = UUID.fromString(userIdStr);
+        invalidateSession(userId);
+      } catch (IllegalArgumentException e) {
+        // Handle malformed UUID if any
+      }
+    }
+  }
+
+  @Override
+  public Map<Object, Object> getSessionByIdentifier(String identifier) {
+    if (identifier == null || identifier.isBlank()) {
+      return Collections.emptyMap();
+    }
+
+    String userIdStr =
+        redisTemplate.opsForValue().get(IDENTIFIER_PREFIX + identifier.toLowerCase().trim());
+
+    if (userIdStr == null || userIdStr.isBlank()) {
+      return Collections.emptyMap();
+    }
+
+    try {
+      UUID userId = UUID.fromString(userIdStr);
+      return getSession(userId);
+    } catch (IllegalArgumentException e) {
+      return Collections.emptyMap();
+    }
   }
 }

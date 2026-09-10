@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,4 +31,21 @@ public interface SessionService {
 
   /** Extend session expiration time. */
   void refreshSession(UUID userId);
+
+  // ================= ADMIN FUNCTIONS =================
+
+  /** Clear a specific user's session by admin. */
+  void clearUserSession(UUID userId);
+
+  /** Get a list of all user IDs that currently have active sessions. */
+  List<UUID> getActiveUsers();
+
+  /** Get all active sessions details mapped by user ID. */
+  Map<UUID, Map<Object, Object>> getAllActiveSessions();
+
+  /** Clear session using email or username. */
+  void clearSessionByIdentifier(String identifier);
+
+  /** Get complete session information using email or username. */
+  Map<Object, Object> getSessionByIdentifier(String identifier);
 }
