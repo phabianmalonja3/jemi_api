@@ -209,7 +209,6 @@ public class EmailServiceImpl implements EmailService {
     try {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
       helper.setFrom("noreply@jemigraph.com");
       helper.setTo(toEmail);
       helper.setSubject("Reset Your Jemigraph Password");
