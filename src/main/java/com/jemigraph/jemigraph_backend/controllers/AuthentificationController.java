@@ -118,7 +118,7 @@ public class AuthentificationController {
   @PostMapping("/reset-password")
   public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
     boolean isSuccess =
-        authentificationService.completePasswordReset(request.getToken(), request.getNewPassword());
+        authentificationService.completePasswordReset(request.getEmail(), request.getNewPassword());
     if (!isSuccess) {
       return ResponseEntity.badRequest().body(Map.of("message", "Invalid Token."));
     }

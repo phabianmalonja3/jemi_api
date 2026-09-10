@@ -1,27 +1,25 @@
 package com.jemigraph.jemigraph_backend.controllers;
 
 import com.jemigraph.jemigraph_backend.DTO.PackageRequestDto;
+import com.jemigraph.jemigraph_backend.DTO.PhotographerProfileDTO;
 import com.jemigraph.jemigraph_backend.DTO.PkgDTO;
-import com.jemigraph.jemigraph_backend.Entities.Pkg;
 import com.jemigraph.jemigraph_backend.mappers.PhotographyPackageMapper;
 import com.jemigraph.jemigraph_backend.mappers.PkgMapper;
 import com.jemigraph.jemigraph_backend.models.LocationUpdateRequest;
-import com.jemigraph.jemigraph_backend.DTO.PhotographerProfileDTO;
 import com.jemigraph.jemigraph_backend.services.LiveStatusService;
 import com.jemigraph.jemigraph_backend.services.PhotographerService;
 import com.jemigraph.jemigraph_backend.services.UserService;
 import com.jemigraph.jemigraph_backend.services.impl.PkgService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -61,9 +59,9 @@ public class PhotographerController {
     }
 
     @DeleteMapping("/packages/{id}")
-    public ResponseEntity<?> deletePackage(@PathVariable UUID id, Principal principal ) {
+    public ResponseEntity<?> deletePackage(@PathVariable UUID id, Principal principal) {
         pkgService.deletePackage(id);
-        return ResponseEntity.ok("Package deleted successfully.");
+        return ResponseEntity.ok(Map.of("message", "Package deleted successfully."));
     }
     @GetMapping("/packages")
     public ResponseEntity<List<PackageRequestDto>> getMyPackages(

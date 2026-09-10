@@ -16,13 +16,19 @@ import java.util.UUID;
 @Service
 public interface PaymentSystemService {
 
-    PaymentInitiationResponse initiatePaymentAsync(User user, UUID planId, String phoneNumber);
-    boolean handleCallback(PaymentCallbackDto callbackPayload);
-    SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId);
-    List<SubscriberResponseDto> getAllSubscribers();
-    byte[] generateReceiptPdf(String orderId) throws Exception;
+  PaymentInitiationResponse initiatePaymentAsync(User user, UUID planId, String phoneNumber);
 
-    List<Payment> getPaymentsByUserAndDateRange(UUID userId, LocalDateTime start, LocalDateTime end);
+  boolean handleCallback(PaymentCallbackDto callbackPayload);
 
-    byte[] generateBulkReceiptPdf(List<Payment> payments, User user);
+  SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId);
+
+  List<SubscriberResponseDto> getAllSubscribers();
+
+  byte[] generateReceiptPdf(String orderId) throws Exception;
+
+  List<Payment> getPaymentsByUserAndDateRange(UUID userId, LocalDateTime start, LocalDateTime end);
+
+  byte[] generateBulkReceiptPdf(List<Payment> payments, User user);
+
+  Payment getPaymentByIdAndUser(UUID id);
 }

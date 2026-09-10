@@ -365,10 +365,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
     }
   }
 
-  // ============================================================
-  // FORMAT AMOUNT
-  // ============================================================
-
   private String formatAmount(BigDecimal price) {
 
     if (price == null) {
@@ -381,22 +377,8 @@ public class CashPayServiceImpl implements PaymentSystemService {
       throw new IllegalArgumentException("Payment amount must be greater than zero");
     }
 
-    /*
-     * CashPay requires:
-     *
-     * "10000"
-     *
-     * NOT:
-     *
-     * "10000.00"
-     */
-
     return price.stripTrailingZeros().toBigInteger().toString();
   }
-
-  // ============================================================
-  // FORMAT PHONE NUMBER
-  // ============================================================
 
   private String formatPhoneNumber(String phoneNumber) {
 
@@ -407,14 +389,10 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
     String phone = phoneNumber.trim().replaceAll("\\s+", "").replace("-", "");
 
-    // +255712345678
     if (phone.startsWith("+255")) {
 
       phone = phone.substring(1);
-    }
-
-    // 0712345678
-    else if (phone.startsWith("0")) {
+    } else if (phone.startsWith("0")) {
 
       phone = "255" + phone.substring(1);
     } else if (phone.length() == 9 && phone.startsWith("7")) {
@@ -782,6 +760,13 @@ public class CashPayServiceImpl implements PaymentSystemService {
     } catch (java.io.IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public Payment getPaymentByIdAndUser(UUID id) {
+    return paymentRepository
+        .findById(id)
+        .orElseThrow(() -> new RuntimeException("Payment not found with id: " + id));
   }
 
   private void sendPaymentWebSocketNotification(Payment payment, String status, String message) {

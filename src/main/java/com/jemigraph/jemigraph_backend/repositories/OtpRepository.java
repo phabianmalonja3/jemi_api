@@ -6,12 +6,15 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface OtpRepository extends JpaRepository<OtpVerification, UUID> {
-  
-    void deleteByExpiryTimeBefore(LocalDateTime now);
 
-    OtpVerification findByEmail(String email);
+  void deleteByExpiryTimeBefore(LocalDateTime now);
+
+  Optional<OtpVerification> findTopByEmailOrderByIdDesc(String email);
+
+  OtpVerification findByEmail(String email);
 }

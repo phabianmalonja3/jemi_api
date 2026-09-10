@@ -80,17 +80,16 @@ public class AuthenticationServiceImpl implements AuthentificationService {
     String clientDeviceName =
         (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
 
-    String sessionId =
-        sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
-
-    UserDevice newDevice = new UserDevice();
-
-    newDevice.setUser(user);
-    newDevice.setDeviceToken(sessionId);
-    newDevice.setDeviceName(clientDeviceName);
-    newDevice.setLastActiveAt(LocalDateTime.now());
-
-    userDeviceRepository.save(newDevice);
+    if (user.getRole() != UserRole.CLIENT) {
+      String sessionId =
+          sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
+      UserDevice newDevice = new UserDevice();
+      newDevice.setUser(user);
+      newDevice.setDeviceToken(sessionId);
+      newDevice.setDeviceName(clientDeviceName);
+      newDevice.setLastActiveAt(LocalDateTime.now());
+      userDeviceRepository.save(newDevice);
+    }
 
     if (request.fcmToken() != null) {
       user.setFcmToken(request.fcmToken());
@@ -115,14 +114,20 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
   @Override
   public boolean verifyOtp(String email, String userProvidedOtp) {
-    OtpVerification otpData = otpRepository.findByEmail(email);
-    if (otpData == null || !otpData.getOtpCode().equals(userProvidedOtp)) {
+    Optional<OtpVerification> otpOpt = otpRepository.findTopByEmailOrderByIdDesc(email);
+
+    if (otpOpt.isEmpty()) {
+      return false;
+    }
+    OtpVerification otpData = otpOpt.get();
+    if (!otpData.getOtpCode().equals(userProvidedOtp)) {
       return false;
     }
     if (LocalDateTime.now().isAfter(otpData.getExpiryTime())) {
       otpRepository.delete(otpData);
       return false;
     }
+    otpRepository.delete(otpData);
     return true;
   }
 
@@ -231,32 +236,18 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   }
 
   @Override
-  public boolean completePasswordReset(String token, String newPassword) {
-    Optional<User> userOptional = userRepository.findByResetToken(token);
-
-    if (userOptional.isEmpty()) {
-
-      return false;
-    }
-
+  public boolean completePasswordReset(String email, String newPassword) {
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
     try {
-      User user = userOptional.get();
-
-      if (user.getResetTokenExpiry() == null
-          || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-        return false;
-      }
-
       user.setPassword(passwordEncoder.encode(newPassword));
       user.setResetToken(null);
       user.setResetTokenExpiry(null);
-
       userRepository.saveAndFlush(user);
-
       return true;
-
     } catch (Exception e) {
-
       return false;
     }
   }
