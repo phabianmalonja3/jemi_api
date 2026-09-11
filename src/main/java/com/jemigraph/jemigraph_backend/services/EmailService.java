@@ -1,8 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
-import jakarta.transaction.Transactional;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,6 +11,13 @@ public interface EmailService {
  void sendVerification(PhotographerVerifiedEvent event);
  void sendForgotPassword(String toEmail);
  void sendPasswordResetEmail(String toEmail, String resetLink);
+ void sendSubscriptionActivated(
+         String toEmail,
+         String userName,
+         String planName,
+         String amount,
+         String startDate,
+         String expiryDate);
 
     void sendEmailToAdmin(String s);
 

@@ -2,6 +2,7 @@ package com.jemigraph.jemigraph_backend.listeners;
 
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
+import com.jemigraph.jemigraph_backend.services.EmailService;
 import com.jemigraph.jemigraph_backend.services.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,34 +15,34 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class PhotographerEventListener {
-    private final SmsService smsService;
+  private final SmsService smsService;
+  private final EmailService emailService;
 
+  private static @NonNull String getString(User verifiedUser) {
+    String name =
+        verifiedUser.getName() != null ? verifiedUser.getName().toUpperCase() : "ESTEEMED PARTNER";
+    String email = verifiedUser.getEmail() != null ? verifiedUser.getEmail() : "N/A";
 
-    @Async
-    @EventListener
-    public void handlePhotographerVerified(PhotographerVerifiedEvent event) {
-        User verifiedUser = event.user();
+    return String.format(
+        "Congratulations %s! Your Jemigraph Tour account has been successfully verified. You may now sign in using your email as your username (%s). Thank you for joining our network—we are excited to work with you.",
+        name, email);
+  }
 
-        if (verifiedUser.getUserProfile() != null && verifiedUser.getUserProfile().getPhone() != null) {
-            String smsMessage = getString(verifiedUser);
+  @Async
+  @EventListener
+  public void handlePhotographerVerified(PhotographerVerifiedEvent event) {
+    User verifiedUser = event.user();
 
-            try {
-                smsService.sendSms(verifiedUser.getUserProfile().getPhone(), smsMessage);
-            } catch (Exception e) {
-               log.info("Failed to send verification SMS: " + e.getMessage());
-                System.err.println("Failed to send verification SMS: " + e.getMessage());
-            }
-        }
+    if (verifiedUser.getUserProfile() != null && verifiedUser.getUserProfile().getPhone() != null) {
+      String smsMessage = getString(verifiedUser);
+
+      try {
+        smsService.sendSms(verifiedUser.getUserProfile().getPhone(), smsMessage);
+        emailService.sendVerification(event);
+      } catch (Exception e) {
+        log.info("Failed to send verification SMS: " + e.getMessage());
+        System.err.println("Failed to send verification SMS: " + e.getMessage());
+      }
     }
-
-    private static @NonNull String getString(User verifiedUser) {
-        String name = verifiedUser.getName() != null ? verifiedUser.getName().toUpperCase() : "ESTEEMED PARTNER";
-        String email = verifiedUser.getEmail() != null ? verifiedUser.getEmail() : "N/A";
-
-        return String.format(
-                "Congratulations %s! Your Jemigraph Tour account has been successfully verified. You may now sign in using your email as your username (%s). Thank you for joining our network—we are excited to work with you.",
-                name,
-                email
-        );
-    }
+  }
 }

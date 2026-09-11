@@ -12,6 +12,7 @@ import com.jemigraph.jemigraph_backend.enums.SystemPaymentStatus;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
+import com.jemigraph.jemigraph_backend.services.EmailService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
 import com.jemigraph.jemigraph_backend.services.SubscriptionService;
 import com.jemigraph.jemigraph_backend.utils.BulkReceiptGenerator;
@@ -58,6 +59,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
   private final SubscriptionService subscriptionService;
 
   private final SimpMessagingTemplate messagingTemplate;
+  private final EmailService emailService;
 
   @Value("${cashpay.base-url}")
   private String baseUrl;
@@ -519,7 +521,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
             transaction,
             payment.getId());
 
-        // Activate subscription and ensure database persistence is flushed immediately
         subscriptionService.activateSubscription(payment.getUserId(), payment.getPlanId());
 
         log.info(
