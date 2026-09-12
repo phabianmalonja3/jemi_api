@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 public interface EmailService {
   void sendAdminOtp(String toEmail);
 
+  void sendLoginAlertEmail(
+		  String recipientEmail, String userName, String ipAddress, String loginTime, String userAgent);
+
   void sendBookingConfirmation(
       String toEmail, String clientName, String photographerName, String date);
 

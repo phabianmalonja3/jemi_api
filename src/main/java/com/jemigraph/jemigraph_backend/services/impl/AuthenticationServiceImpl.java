@@ -77,8 +77,37 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new PendingVerificationException("ACCOUNT_PENDING_VERIFICATION");
     }
 
-    String clientDeviceName =
+    // Pata IP na User-Agent kupitia RequestContextHolder
+    String ipAddress = "Unknown IP";
+    String userAgent =
         (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
+
+    try {
+      var servletAttributes =
+          (org.springframework.web.context.request.ServletRequestAttributes)
+              org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+      if (servletAttributes != null) {
+        jakarta.servlet.http.HttpServletRequest httpRequest = servletAttributes.getRequest();
+        ipAddress = getClientIp(httpRequest);
+        String agentHeader = httpRequest.getHeader("User-Agent");
+        if (agentHeader != null && !agentHeader.isBlank()) {
+          userAgent = agentHeader;
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Imeshindwa kupata IP au User-Agent: {}", e.getMessage());
+    }
+
+    String loginTime =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                .format(LocalDateTime.now())
+            + " EAT (GMT+3)";
+    if (user.getRole() == UserRole.ADMIN) {
+      emailService.sendLoginAlertEmail(
+          user.getEmail(), user.getName(), ipAddress, loginTime, userAgent);
+    }
+
+    String clientDeviceName = userAgent;
 
     if (request.fcmToken() != null) {
       user.setFcmToken(request.fcmToken());
@@ -114,6 +143,20 @@ public class AuthenticationServiceImpl implements AuthentificationService {
     }
 
     throw new RuntimeException("Unauthorized role access");
+  }
+
+  private String getClientIp(jakarta.servlet.http.HttpServletRequest request) {
+    String ipAddress = request.getHeader("X-Forwarded-For");
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getHeader("Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getHeader("WL-Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getRemoteAddr();
+    }
+    return ipAddress;
   }
 
   @Override

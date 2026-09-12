@@ -323,6 +323,77 @@ public class EmailServiceImpl implements EmailService {
     }
   }
 
+  @Async
+  @Override
+  public void sendLoginAlertEmail(
+      String recipientEmail,
+      String userName,
+      String ipAddress,
+      String loginTime,
+      String userAgent) {
+
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(recipientEmail);
+      helper.setSubject("Security Alert: New Login Detected - Jemigraph");
+
+      String htmlContent =
+          "<div style='background-color: #f4f6f9; padding: 30px 0; font-family: Arial, sans-serif;'>"
+              + "<div style='max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>"
+              + "<div style='background: #0f172a; padding: 20px; text-align: center; color: #ffffff;'>"
+              + "<h2 style='margin: 0; font-size: 22px; letter-spacing: 1px;'>JEMIGRAPH SECURITY</h2>"
+              + "</div>"
+              + "<div style='padding: 30px; color: #334155;'>"
+              + "<h3 style='margin-top: 0; color: #0f172a;'>Hi "
+              + userName
+              + ",</h3>"
+              + "<p style='line-height: 1.6; font-size: 15px;'>"
+              + "A login was detected on your account.<br>"
+              + "If this was you, no action is needed."
+              + "</p>"
+              + "<div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin: 20px 0; font-size: 14px;'>"
+              + "<p style='margin: 5px 0;'><b>Login IP:</b> "
+              + ipAddress
+              + "</p>"
+              + "<p style='margin: 5px 0;'><b>Time:</b> "
+              + loginTime
+              + "</p>"
+              + "<p style='margin: 5px 0; word-break: break-all;'><b>Device:</b> "
+              + userAgent
+              + "</p>"
+              + "</div>"
+              + "<p style='font-size: 14px; line-height: 1.6; color: #4b5563;'>"
+              + "If you have any concerns or questions, please do not hesitate to reach out to our support team."
+              + "</p>"
+              + "<div style='margin-top: 25px; text-align: center;'>"
+              + "<a href='https://jemigraph.co.tz/auth/forgot-password' style='background-color: #dc2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; display: inline-block;'>Secure Account / Reset Password</a>"
+              + "</div>"
+              + "<hr style='border: none; border-top: 1px solid #e2e8f0; margin: 25px 0;'>"
+              + "<p style='font-size: 13px; color: #94a3b8; line-height: 1.4; margin-bottom: 0; text-align: center;'>"
+              + "Thank you for choosing Jemigraph  Tour."
+              + "</p>"
+              + "</div>"
+              + "<div style='background: #f8fafc; padding: 15px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>"
+              + "&copy; 2026 Jemigraph. All rights reserved."
+              + "</div>"
+              + "</div>"
+              + "</div>";
+
+      helper.setText(htmlContent, true);
+      mailSender.send(message);
+
+      log.info("Login alert security email sent successfully to {}", recipientEmail);
+
+    } catch (MessagingException e) {
+      log.error("Failed to send login alert email to {}: {}", recipientEmail, e.getMessage(), e);
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /** Send forgot-password OTP through email and SMS. */
   @Async
   @Override
