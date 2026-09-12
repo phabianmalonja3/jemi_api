@@ -196,6 +196,133 @@ public class EmailServiceImpl implements EmailService {
     }
   }
 
+  @Override
+  @Async
+  public void sendAdminOtp(String toEmail) {
+
+    User user =
+        userRepository
+            .findFirstByEmail(toEmail)
+            .orElseThrow(() -> new RuntimeException("User Does not Exist !"));
+
+    String otp = generateRandom6DigitCode();
+
+    LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+
+    otpRepository.deleteByEmail(toEmail);
+
+    OtpVerification otpEntity =
+        OtpVerification.builder().email(toEmail).otpCode(otp).expiryTime(expiry).build();
+
+    otpRepository.save(otpEntity);
+
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(toEmail);
+      helper.setSubject("Admin Login Verification Code - Jemigraph");
+      String htmlContent =
+          "<div style='background-color: #f4f6f9; "
+              + "padding: 30px 0; "
+              + "font-family: Arial, sans-serif;'>"
+              + "<div style='max-width: 500px; "
+              + "margin: 0 auto; "
+              + "background: #ffffff; "
+              + "border-radius: 8px; "
+              + "overflow: hidden; "
+              + "box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>"
+              + "<div style='background: #0f172a; "
+              + "padding: 20px; "
+              + "text-align: center; "
+              + "color: #ffffff;'>"
+              + "<h2 style='margin: 0; "
+              + "font-size: 22px; "
+              + "letter-spacing: 1px;'>"
+              + "JEMIGRAPH ADMIN"
+              + "</h2>"
+              + "</div>"
+              + "<div style='padding: 30px; "
+              + "color: #334155;'>"
+              + "<h3 style='margin-top: 0; "
+              + "color: #0f172a;'>"
+              + "Hello "
+              + user.getName()
+              + ","
+              + "</h3>"
+              + "<p style='line-height: 1.6; "
+              + "font-size: 15px;'>"
+              + "We received a login request for your Administrator account. "
+              + "Use the verification code below to complete your sign-in:"
+              + "</p>"
+              + "<div style='text-align: center; "
+              + "margin: 30px 0;'>"
+              + "<span style='display: inline-block; "
+              + "background: #f8fafc; "
+              + "border: 2px dashed #cbd5e1; "
+              + "color: #0f172a; "
+              + "font-size: 32px; "
+              + "font-weight: bold; "
+              + "letter-spacing: 6px; "
+              + "padding: 12px 24px; "
+              + "border-radius: 6px;'>"
+              + otp
+              + "</span>"
+              + "</div>"
+              + "<p style='font-size: 14px; "
+              + "color: #64748b; "
+              + "text-align: center;'>"
+              + "This code <b>expires in 10 minutes</b>."
+              + "</p>"
+              + "<hr style='border: none; "
+              + "border-top: 1px solid #e2e8f0; "
+              + "margin: 25px 0;'>"
+              + "<p style='font-size: 13px; "
+              + "color: #94a3b8; "
+              + "line-height: 1.4; "
+              + "margin-bottom: 0;'>"
+              + "If you did not attempt to log in as an administrator, "
+              + "please secure your account immediately."
+              + "</p>"
+              + "</div>"
+              + "<div style='background: #f8fafc; "
+              + "padding: 15px; "
+              + "text-align: center; "
+              + "font-size: 12px; "
+              + "color: #94a3b8; "
+              + "border-top: 1px solid #e2e8f0;'>"
+              + "&copy; 2026 Jemigraph. All rights reserved."
+              + "</div>"
+              + "</div>"
+              + "</div>";
+
+      helper.setText(htmlContent, true);
+      mailSender.send(message);
+      String phone = user.getUserProfile() != null ? user.getUserProfile().getPhone() : null;
+
+      if (phone != null && !phone.isBlank()) {
+
+        String smsMessage = "Your Jemigraph Admin login OTP is: " + otp + ". Valid for 10 minutes.";
+
+        smsService.sendSms(phone, smsMessage);
+      }
+
+      log.info("Admin login OTP sent to {}", toEmail);
+
+    } catch (MessagingException e) {
+
+      log.error("Failed to send admin OTP email to {}: {}", toEmail, e.getMessage(), e);
+
+      throw new RuntimeException("Failed to send email", e);
+
+    } catch (Exception e) {
+
+      log.error("Failed to send admin OTP notification to {}: {}", toEmail, e.getMessage(), e);
+
+      throw new RuntimeException("Failed to send admin OTP notification: " + e.getMessage(), e);
+    }
+  }
+
   /** Send forgot-password OTP through email and SMS. */
   @Async
   @Override

@@ -4,12 +4,14 @@ import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.mappers.UserResponseMapper;
 import com.jemigraph.jemigraph_backend.models.ResetPasswordRequest;
+import com.jemigraph.jemigraph_backend.repositories.OtpRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserDeviceRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.requests.AuthenticationRequest;
 import com.jemigraph.jemigraph_backend.services.SessionService;
 import com.jemigraph.jemigraph_backend.services.impl.AuthenticationServiceImpl;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -34,6 +36,7 @@ public class AuthentificationController {
   private final UserRepository userRepository;
   private final UserDeviceRepository userDeviceRepository;
   private final SessionService sessionService;
+  private final OtpRepository otpRepository;
 
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> authenticate(
@@ -44,6 +47,16 @@ public class AuthentificationController {
     return ResponseEntity.ok(authentificationService.authenticate(request, finalDeviceName));
   }
 
+  @PostMapping("/verify-admin-otp")
+  public ResponseEntity<AuthResponse> verifyAdminOtp(
+          @RequestBody OtpVerificationRequestDTO request,
+          HttpServletRequest servletRequest) {
+    String clientDeviceName = servletRequest.getHeader("User-Agent");
+
+    AuthResponse response = authentificationService.verifyAdminOtp(request, clientDeviceName);
+
+    return ResponseEntity.ok(response);
+  }
   @PostMapping("/register")
   public ResponseEntity<RegistrationResponseDTO> register(
       @NonNull @Valid @RequestBody RegisterRequestDTO userDTO) {

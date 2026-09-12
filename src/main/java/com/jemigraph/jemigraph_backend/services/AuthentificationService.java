@@ -10,14 +10,19 @@ import java.util.UUID;
 
 @Service
 public interface AuthentificationService {
+  AuthResponse authenticate(AuthenticationRequest request, String deviceName);
 
+  User getMe(String email);
 
-     AuthResponse authenticate(AuthenticationRequest request,String deviceName);
-     User getMe(String email );
-      boolean verifyOtp(String email, String userProvidedOtp);
-     RegistrationResponseDTO createUser(RegisterRequestDTO userDto);
-     boolean requestPasswordReset(String email);
-     boolean completePasswordReset(String token, String newPassword);
-     UserDTO changeUserPassword(String email, String currentPassword, String newPassword);
+  boolean verifyOtp(String email, String userProvidedOtp);
 
+  RegistrationResponseDTO createUser(RegisterRequestDTO userDto);
+
+  boolean requestPasswordReset(String email);
+
+  boolean completePasswordReset(String token, String newPassword);
+
+  UserDTO changeUserPassword(String email, String currentPassword, String newPassword);
+
+  AuthResponse verifyAdminOtp(OtpVerificationRequestDTO request, String deviceName);
 }

@@ -80,6 +80,11 @@ public class AuthenticationServiceImpl implements AuthentificationService {
     String clientDeviceName =
         (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
 
+    if (request.fcmToken() != null) {
+      user.setFcmToken(request.fcmToken());
+      userRepository.save(user);
+    }
+
     if (user.getRole() == UserRole.PHOTOGRAPHER) {
       String sessionId =
           sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
@@ -89,20 +94,26 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       newDevice.setDeviceName(clientDeviceName);
       newDevice.setLastActiveAt(LocalDateTime.now());
       userDeviceRepository.save(newDevice);
+
+      String jwtToken = jwtService.generateRefreshToken(email);
+      String jwtRefreshToken = jwtService.generateRefreshToken(email);
+
+      return AuthResponse.builder()
+          .user(userMapper.toDto(user))
+          .accessToken(jwtToken)
+          .refreshToken(jwtRefreshToken)
+          .build();
+    } else if (user.getRole() == UserRole.ADMIN) {
+      emailService.sendAdminOtp(user.getEmail());
+
+      return AuthResponse.builder()
+          .user(userMapper.toDto(user))
+          .accessToken(null)
+          .refreshToken(null)
+          .build();
     }
 
-    if (request.fcmToken() != null) {
-      user.setFcmToken(request.fcmToken());
-      userRepository.save(user);
-    }
-    String jwtToken = jwtService.generateRefreshToken(email);
-    String jwtRefreshToken = jwtService.generateRefreshToken(email);
-
-    return AuthResponse.builder()
-        .user(userMapper.toDto(user))
-        .accessToken(jwtToken)
-        .refreshToken(jwtRefreshToken)
-        .build();
+    throw new RuntimeException("Unauthorized role access");
   }
 
   @Override
@@ -157,7 +168,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       }
 
       if (userDto.getBio() == null || userDto.getBio().isEmpty()) {
-
         throw new IllegalArgumentException("Bio is required for Photographer registration.");
       }
     }
@@ -225,7 +235,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       emailService.sendForgotPassword(email);
       return true;
     } catch (Exception e) {
-
       return false;
     }
   }
@@ -261,7 +270,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
             .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
     if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-
       throw new RuntimeException("Current password is incorrect");
     }
     String encryptedPassword = passwordEncoder.encode(newPassword);
@@ -269,5 +277,60 @@ public class AuthenticationServiceImpl implements AuthentificationService {
     User updatedUser = userRepository.save(user);
 
     return userMapper.toDto(updatedUser);
+  }
+
+  @Override
+  @Transactional
+  public AuthResponse verifyAdminOtp(OtpVerificationRequestDTO request, String deviceName) {
+    String email = request.getEmail();
+    String code = request.getCode();
+
+    Optional<OtpVerification> otpOpt = otpRepository.findTopByEmailOrderByIdDesc(email);
+    if (otpOpt.isEmpty()) {
+      throw new RuntimeException("Invalid or expired OTP code");
+    }
+
+    OtpVerification otpData = otpOpt.get();
+    if (!otpData.getOtpCode().equals(code)) {
+      throw new RuntimeException("Invalid verification code");
+    }
+
+    if (LocalDateTime.now().isAfter(otpData.getExpiryTime())) {
+      otpRepository.delete(otpData);
+      throw new RuntimeException("OTP code has expired. Please request a new one.");
+    }
+
+    otpRepository.delete(otpData);
+
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+    if (user.getRole() != UserRole.ADMIN) {
+      throw new RuntimeException("Unauthorized access");
+    }
+
+    String clientDeviceName =
+        (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
+
+    String sessionId =
+        sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
+
+    UserDevice newDevice = new UserDevice();
+    newDevice.setUser(user);
+    newDevice.setDeviceToken(sessionId);
+    newDevice.setDeviceName(clientDeviceName);
+    newDevice.setLastActiveAt(LocalDateTime.now());
+    userDeviceRepository.save(newDevice);
+
+    String jwtToken = jwtService.generateRefreshToken(email);
+    String jwtRefreshToken = jwtService.generateRefreshToken(email);
+
+    return AuthResponse.builder()
+        .user(userMapper.toDto(user))
+        .accessToken(jwtToken)
+        .refreshToken(jwtRefreshToken)
+        .build();
   }
 }
