@@ -311,19 +311,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new RuntimeException("Unauthorized access");
     }
 
-    String clientDeviceName =
-        (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
-
-    String sessionId =
-        sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
-
-    UserDevice newDevice = new UserDevice();
-    newDevice.setUser(user);
-    newDevice.setDeviceToken(sessionId);
-    newDevice.setDeviceName(clientDeviceName);
-    newDevice.setLastActiveAt(LocalDateTime.now());
-    userDeviceRepository.save(newDevice);
-
     String jwtToken = jwtService.generateRefreshToken(email);
     String jwtRefreshToken = jwtService.generateRefreshToken(email);
 
