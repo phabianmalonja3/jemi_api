@@ -225,13 +225,10 @@ public class EmailServiceImpl implements EmailService {
 
     try {
       MimeMessage message = mailSender.createMimeMessage();
-
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
       helper.setFrom(FROM_EMAIL, FROM_NAME);
       helper.setTo(toEmail);
       helper.setSubject("Password Reset OTP - Jemigraph");
-
       String htmlContent =
           "<div style='background-color: #f4f6f9; "
               + "padding: 30px 0; "

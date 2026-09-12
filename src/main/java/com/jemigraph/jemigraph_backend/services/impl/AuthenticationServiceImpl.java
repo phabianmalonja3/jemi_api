@@ -80,7 +80,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
     String clientDeviceName =
         (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
 
-    if (user.getRole() != UserRole.CLIENT) {
+    if (user.getRole() == UserRole.PHOTOGRAPHER) {
       String sessionId =
           sessionService.createSession(user.getId(), user.getEmail(), clientDeviceName);
       UserDevice newDevice = new UserDevice();
