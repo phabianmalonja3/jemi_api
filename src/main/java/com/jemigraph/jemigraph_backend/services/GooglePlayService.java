@@ -1,15 +1,24 @@
 package com.jemigraph.jemigraph_backend.services;
 
-import com.google.api.services.androidpublisher.AndroidPublisher;
-import org.springframework.stereotype.Service;
+import java.io.IOException;
 
-@Service
 public interface GooglePlayService {
-  AndroidPublisher getAndroidPublisherService() throws Exception;
 
-  String checkAppDetails(String packageName);
+  /** Verifies that the configured service account can reach the given app. */
+  String checkAppDetails(String packageName) throws IOException;
 
-  String fetchAppListingDetails(String packageName) throws Exception;
+  /** Fetches tracks + releases for the given app. */
+  String fetchAppListingDetails(String packageName) throws IOException;
 
-  String fetchDownloadStatistics(String packageName) throws Exception;
+  /**
+   * Lists uploaded AAB bundles for the given app. NOTE: The Android Publisher API does NOT expose
+   * download counts.
+   */
+  String fetchUploadedBundles(String packageName) throws IOException;
+
+  /**
+   * Fetches error reports and vitals metrics for the given app using the Google Play Developer
+   * Reporting API.
+   */
+  String fetchErrorReportsAndVitals(String packageName) throws IOException;
 }
