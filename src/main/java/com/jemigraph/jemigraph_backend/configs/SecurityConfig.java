@@ -46,6 +46,8 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**")
                     .permitAll()
+                    .requestMatchers("/google-play/**")
+                    .permitAll()
                     .requestMatchers("/api-docs**")
                     .permitAll()
                     .requestMatchers("/ws-jemigrapher")

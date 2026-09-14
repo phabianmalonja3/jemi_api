@@ -145,6 +145,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-androidpublisher</artifactId>
+            <version>v3-rev20260909-2.0.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
             <version>6.4.10</version>
