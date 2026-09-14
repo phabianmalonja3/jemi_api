@@ -2,10 +2,7 @@ package com.jemigraph.jemigraph_backend.listeners;
 
 
 import com.jemigraph.jemigraph_backend.events.JemigraphEvent;
-import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.EmailService;
-import com.jemigraph.jemigraph_backend.services.FirebaseNotificationService;
-import com.jemigraph.jemigraph_backend.services.NotificationService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -19,12 +16,12 @@ import org.springframework.stereotype.Component;
 public class AdminNotificationListener {
 
     private static final Logger log = LoggerFactory.getLogger(AdminNotificationListener.class);
+    private final EmailService emailService;
 
     @PostConstruct
     public void init() {
         log.info("Notofaction has started !");
     }
-    private final EmailService emailService;
 
     @Async("notificationExecutor")
     @EventListener
