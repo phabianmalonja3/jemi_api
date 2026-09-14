@@ -11,6 +11,5 @@ public interface GooglePlayService {
 
   String fetchAppListingDetails(String packageName) throws Exception;
 
-  // Njia mpya kwa ajili ya vipakuliwa na takwimu za kina
   String fetchDownloadStatistics(String packageName) throws Exception;
 }

@@ -23,18 +23,20 @@ spring:
           port: 6379
           timeout: 2000ms
           lettuce:
-#            pool:
-#              max-active: 8
-#              max-idle: 8
-#              min-idle: 0
+          #            pool:
+          #              max-active: 8
+          #              max-idle: 8
+          #              min-idle: 0
           config:
             notify-keyspace-events: Ex
 springdoc:
-    swagger-ui:
-              path: ${API_DOC}
+  swagger-ui:
+    path: ${API_DOC}
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
+  google:
+    play-key-path: classpath:service-account.json
 
   endpoints:
     web:
@@ -46,4 +48,4 @@ app:
 
 
 web:
-   frontend-url: ${WEB_URL}
+  frontend-url: ${WEB_URL}

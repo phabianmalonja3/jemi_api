@@ -10,24 +10,32 @@ import com.google.api.services.androidpublisher.model.TracksListResponse;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.jemigraph.jemigraph_backend.services.GooglePlayService;
-import java.io.FileInputStream;
 import java.util.Collections;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 @Service
 public class GooglePlayServiceImpl implements GooglePlayService {
-
   private static final String APPLICATION_NAME = "MySystemDownloadTracker";
-  private static final String SERVICE_ACCOUNT_KEY_PATH =
-      "/opt/jemigraph/secrets/service-account.json";
 
-  //	private static final String SERVICE_ACCOUNT_KEY_PATH =
-  // "src/main/resources/service-account.json";
+  private final String serviceAccountKeyPath;
+  private final ResourceLoader resourceLoader;
+
+  public GooglePlayServiceImpl(
+      @Value("${app.google.play-key-path}") String serviceAccountKeyPath,
+      ResourceLoader resourceLoader) {
+    this.serviceAccountKeyPath = serviceAccountKeyPath;
+    this.resourceLoader = resourceLoader;
+  }
 
   @Override
   public AndroidPublisher getAndroidPublisherService() throws Exception {
+    Resource resource = resourceLoader.getResource(serviceAccountKeyPath);
+
     GoogleCredentials credentials =
-        GoogleCredentials.fromStream(new FileInputStream(SERVICE_ACCOUNT_KEY_PATH))
+        GoogleCredentials.fromStream(resource.getInputStream())
             .createScoped(Collections.singleton(AndroidPublisherScopes.ANDROIDPUBLISHER));
 
     return new AndroidPublisher.Builder(
@@ -52,7 +60,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
   public String fetchAppListingDetails(String packageName) throws Exception {
     AndroidPublisher publisher = getAndroidPublisherService();
 
-    // Anzisha App Edit session ili kupata taarifa za tracks (Production, Beta, n.k.)
     AndroidPublisher.Edits edits = publisher.edits();
     AppEdit editRequest = edits.insert(packageName, null).execute();
     String editId = editRequest.getId();
@@ -69,7 +76,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
   public String fetchDownloadStatistics(String packageName) throws Exception {
     AndroidPublisher publisher = getAndroidPublisherService();
 
-    // Anzisha App Edit session ili kusoma App Bundles zilizopakiwa
     AndroidPublisher.Edits edits = publisher.edits();
     AppEdit editRequest = edits.insert(packageName, null).execute();
     String editId = editRequest.getId();
@@ -82,6 +88,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
         + packageName
         + "): Jumla ya App Bundles zilizopo kwenye Console ni "
         + bundleCount
-        + ". (Kumbuka: Kwa takwimu za kina za idadi ya vipakuliwa vya watumiaji, hutolewa kupitia Google Cloud Storage Reports).";
+        + ".";
   }
 }
