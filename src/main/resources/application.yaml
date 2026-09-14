@@ -16,7 +16,7 @@ spring:
             required: true
 
   profiles:
-    active: dev
+    active: prod
 
   servlet:
     multipart:
