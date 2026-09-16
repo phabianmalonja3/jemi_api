@@ -640,9 +640,9 @@ public class CashPayServiceImpl implements PaymentSystemService {
   @Override
   public List<SubscriberResponseDto> getAllSubscribers() {
     List<User> photographers =
-            userRepository.findAll().stream()
-                    .filter(user -> user.getRole() == UserRole.PHOTOGRAPHER)
-                    .toList();
+        userRepository.findAll().stream()
+            .filter(user -> user.getRole() == UserRole.PHOTOGRAPHER)
+            .toList();
 
     List<SubscriberResponseDto> subscribersList = new ArrayList<>();
 
@@ -652,39 +652,42 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
         SubscriptionPlan activePlan = null;
 
-        // 1. ANGALIA KWANZA: Labda plan imehifadhiwa moja kwa moja kwenye User (Admin approval / Direct assignment)
+        // 1. ANGALIA KWANZA: Labda plan imehifadhiwa moja kwa moja kwenye User (Admin approval /
+        // Direct assignment)
         if (user.getSubscriptionPlan() != null) {
           activePlan = user.getSubscriptionPlan();
-        }
-        else {
+        } else {
           // 2. KAMA HAKUNA: Ndipo tuangalie kupitia Payment ya mwisho (kama ilivyokuwa mwanzo)
           Payment latestPayment =
-                  paymentRepository
-                          .findFirstByUserIdAndStatusOrderByCreatedAtDesc(
-                                  user.getId(), SystemPaymentStatus.SUCCESS)
-                          .orElse(null);
+              paymentRepository
+                  .findFirstByUserIdAndStatusOrderByCreatedAtDesc(
+                      user.getId(), SystemPaymentStatus.SUCCESS)
+                  .orElse(null);
 
           if (latestPayment != null && latestPayment.getPlanId() != null) {
-            activePlan = subscriptionPlanRepository.findById(latestPayment.getPlanId()).orElse(null);
+            activePlan =
+                subscriptionPlanRepository.findById(latestPayment.getPlanId()).orElse(null);
           }
         }
 
         SubscriberResponseDto dto =
-                SubscriberResponseDto.builder()
-                        .userId(user.getId())
-                        .email(user.getEmail())
-                        .subscriptionStatus(user.getSubscriptionStatus().name())
-                        .expiresAt(user.getSubscriptionExpiresAt())
-                        .planName(activePlan != null ? activePlan.getName().toString() : "Trial / Admin Assigned")
-                        .planAmount(activePlan != null ? activePlan.getPrice() : BigDecimal.ZERO)
-                        .durationInDays(activePlan != null ? activePlan.getDurationInDays() : 0)
-                        .build();
+            SubscriberResponseDto.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .subscriptionStatus(user.getSubscriptionStatus().name())
+                .expiresAt(user.getSubscriptionExpiresAt())
+                .planName(
+                    activePlan != null ? activePlan.getName().toString() : "Trial / Admin Assigned")
+                .planAmount(activePlan != null ? activePlan.getPrice() : BigDecimal.ZERO)
+                .durationInDays(activePlan != null ? activePlan.getDurationInDays() : 0)
+                .build();
 
         subscribersList.add(dto);
       }
     }
     return subscribersList;
   }
+
   @Override
   public byte[] generateReceiptPdf(String orderId) throws Exception {
     ZoneId tz = ZoneId.of("Africa/Dar_es_Salaam");
