@@ -6,20 +6,19 @@ import lombok.Data;
 @Data
 public class AppVersionRequest {
 
-    private String appId; // Added to distinguish between your two apps
+  private String appId;
 
-    private AppPlatform platform;
+  private AppPlatform platform;
 
-    private String currentVersion;
+  private String currentVersion;
 
-    private Integer currentBuildNumber;
+  private Integer currentBuildNumber;
 
-    private Integer minimumBuildNumber;
+  private Integer minimumBuildNumber;
 
-    private String updateMessage;
+  private String updateMessage;
 
-    private String storeUrl;
+  private String storeUrl;
 
-    private Boolean active;
-
+  private Boolean active;
 }

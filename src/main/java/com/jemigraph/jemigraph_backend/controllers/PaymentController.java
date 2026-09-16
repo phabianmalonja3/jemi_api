@@ -4,7 +4,6 @@ import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.Payment;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.PaymentRepository;
-import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
 import jakarta.validation.Valid;
@@ -32,7 +31,6 @@ public class PaymentController {
   private final PaymentSystemService paymentService;
   private final UserRepository userRepository;
   private final PaymentRepository paymentRepository;
-  private final SubscriptionPlanRepository subscriptionPlanRepository;
 
   @GetMapping("/my-payments")
   public ResponseEntity<List<Payment>> getMyPayments(Principal principal) {
@@ -137,7 +135,7 @@ public class PaymentController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Payment> getPaymentById(@PathVariable UUID id, Principal principal) {
+  public ResponseEntity<Payment> getPaymentById(@PathVariable UUID id) {
     Payment payment = paymentService.getPaymentByIdAndUser(id);
     return ResponseEntity.ok(payment);
   }
@@ -155,7 +153,6 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
       }
 
-      // Tafuta user kupitia email/username iliyopo kwenye Token/Principal
       com.jemigraph.jemigraph_backend.Entities.User user =
           userRepository
               .findByEmail(principal.getName())

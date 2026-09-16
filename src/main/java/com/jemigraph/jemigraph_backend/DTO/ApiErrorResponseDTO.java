@@ -1,18 +1,14 @@
 package com.jemigraph.jemigraph_backend.DTO;
-import lombok.Data;
+
 import java.time.LocalDateTime;
+import lombok.Data;
 
 @Data
 public class ApiErrorResponseDTO {
-    private int status;
-    private String message;
-    private LocalDateTime timestamp;
-    private String path;
+  private int status;
+  private String message;
+  private LocalDateTime timestamp;
+  private String path;
 
-    public ApiErrorResponseDTO(int status, String message, String path) {
-        this.status = status;
-        this.message = message;
-        this.path = path;
-        this.timestamp = LocalDateTime.now();
-    }
+  public ApiErrorResponseDTO(int value, String s, Object o) {}
 }

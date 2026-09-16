@@ -14,41 +14,37 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
+  @Bean
+  public ObjectMapper objectMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.registerModule(new JavaTimeModule());
+    return mapper;
+  }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
+  @Bean
+  public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    RedisTemplate<String, Object> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
+    StringRedisSerializer stringSerializer = new StringRedisSerializer();
+    template.setKeySerializer(stringSerializer);
+    template.setValueSerializer(stringSerializer);
+    template.setHashKeySerializer(stringSerializer);
+    template.setHashValueSerializer(stringSerializer);
+    template.afterPropertiesSet();
+    return template;
+  }
 
-        StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(stringSerializer);
-        template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(stringSerializer);
+  @Bean
+  public RedisMessageListenerContainer redisMessageListenerContainer(
+      RedisConnectionFactory connectionFactory, KeyExpiredListener keyExpiredListener) {
 
-        template.afterPropertiesSet();
-        return template;
-    }
+    RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+    container.setConnectionFactory(connectionFactory);
 
-    @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory connectionFactory,
-            KeyExpiredListener keyExpiredListener) {
+    container.addMessageListener(keyExpiredListener, new ChannelTopic("__keyevent@0__:expired"));
 
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-
-
-        container.addMessageListener(keyExpiredListener, new ChannelTopic("__keyevent@0__:expired"));
-
-        return container;
-    }
+    return container;
+  }
 }

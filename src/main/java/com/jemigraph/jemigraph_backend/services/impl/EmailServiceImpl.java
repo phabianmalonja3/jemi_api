@@ -11,8 +11,10 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -643,6 +645,94 @@ public class EmailServiceImpl implements EmailService {
     } catch (Exception e) {
 
       log.error("Failed to send admin notification email: {}", e.getMessage(), e);
+    }
+  }
+
+  @Override
+  @Async
+  public void sendApprovalNotificationToAdmin(
+      String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId) {
+
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo("admin@jemigraph.com"); // Weka email ya Super Admin hapa
+      helper.setSubject("New Subscription Change Request - Jemigraph");
+      String approveUrl =
+          "https://jemigraph.co.tz/subscriptions/process?id=" + requestId + "&action=APPROVE";
+      String rejectUrl =
+          "https://jemigraph.co.tz/subscriptions/process?id=" + requestId + "&action=REJECT";
+
+      String htmlContent =
+          "<html>"
+              + "<body style='margin:0; padding:0; background-color:#f4f6f9; font-family:Arial,sans-serif;'>"
+              + "<div style='max-width:600px; margin:30px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.08);'>"
+
+              // Header
+              + "<div style='background:#1e40af; padding:25px; text-align:center; color:#ffffff;'>"
+              + "<h1 style='margin:0; font-size:26px;'>JEMIGRAPH ADMIN</h1>"
+              + "<p style='margin:8px 0 0; font-size:14px;'>New Subscription Request Pending</p>"
+              + "</div>"
+
+              // Body
+              + "<div style='padding:30px;'>"
+              + "<h2 style='color:#1f2937; margin-top:0;'>Hello Super Admin,</h2>"
+              + "<p style='font-size:15px; line-height:1.7; color:#4b5563;'>"
+              + "A user has requested a subscription plan change. Please review the details below and click either Accept or Reject."
+              + "</p>"
+
+              // Request details box
+              + "<div style='background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:20px; margin:25px 0;'>"
+              + "<h3 style='margin-top:0; color:#1e40af;'> Request Summary</h3>"
+              + "<p style='margin:8px 0; color:#1e3a8a; font-size:14px;'><strong>User Email:</strong> "
+              + userEmail
+              + "</p>"
+              + "</div>"
+
+              // Details Table
+              + "<h3 style='color:#1f2937;'>Plan Details</h3>"
+              + "<table style='width:100%; border-collapse:collapse; font-size:14px;'>"
+              + "<tr><td style='padding:10px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;'>Requested Plan</td><td style='padding:10px 0; border-bottom:1px solid #e5e7eb; font-weight:bold; text-align:right;'>"
+              + planName
+              + "</td></tr>"
+              + "<tr><td style='padding:10px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;'>Price</td><td style='padding:10px 0; border-bottom:1px solid #e5e7eb; font-weight:bold; text-align:right;'>TSh "
+              + planPrice
+              + "</td></tr>"
+              + "<tr><td style='padding:10px 0; color:#6b7280;'>Duration</td><td style='padding:10px 0; font-weight:bold; text-align:right;'>"
+              + durationDays
+              + " Days</td></tr>"
+              + "</table>"
+
+              // Action Buttons (Accept & Reject)
+              + "<div style='text-align:center; margin-top:30px;'>"
+              + "<a href='"
+              + approveUrl
+              + "' style='background:#25632D; color:#ffffff; padding:12px 25px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block; margin-right:10px;'>Accept</a>"
+              + "<a href='"
+              + rejectUrl
+              + "' style='background:#dc2626; color:#ffffff; padding:12px 25px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;'>Reject</a>"
+              + "</div>"
+              + "</div>"
+
+              // Footer
+              + "<div style='background:#f8fafc; padding:18px; text-align:center; font-size:12px; color:#94a3b8; border-top:1px solid #e5e7eb;'>"
+              + "&copy; 2026 Jemigraph. All rights reserved."
+              + "</div>"
+              + "</div>"
+              + "</body>"
+              + "</html>";
+
+      helper.setText(htmlContent, true);
+      mailSender.send(message);
+
+      log.info(
+          "Subscription approval notification email successfully sent to Admin for user {}",
+          userEmail);
+
+    } catch (MessagingException | UnsupportedEncodingException e) {
+      log.error("Failed to send subscription approval notification email: {}", e.getMessage(), e);
     }
   }
 

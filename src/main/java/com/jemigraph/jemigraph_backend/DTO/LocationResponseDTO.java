@@ -1,13 +1,11 @@
 package com.jemigraph.jemigraph_backend.DTO;
 
 
-import lombok.Data;
-
 import java.util.UUID;
+import lombok.Data;
 
 @Data
 public class LocationResponseDTO {
-
     private UUID uuid;
     private Double latitude;
     private Double longitude;

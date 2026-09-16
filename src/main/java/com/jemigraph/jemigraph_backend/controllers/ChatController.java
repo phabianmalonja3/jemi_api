@@ -14,18 +14,20 @@ import org.springframework.stereotype.Controller;
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
-    private final ChatService chatService;
-    private final ChatRepository chatRepository;
+  private final ChatService chatService;
+  private final ChatRepository chatRepository;
 
-    @MessageMapping("/chat.sendMessage/{bookingId}")
-    @SendTo("/topic/chat/{bookingId}")
-    public ChatMessage sendMessage(@DestinationVariable String bookingId, @Payload ChatMessage chatMessage) {
-        chatMessage.setChatId(bookingId);
-        return chatRepository.save(chatMessage);
-    }
-    @MessageMapping("/chat.typing/{chatId}")
-    @SendTo("/topic/chat/{chatId}/typing")
-    public TypingEvent handleTyping(@DestinationVariable String chatId, TypingEvent typingEvent){
-        return typingEvent;
-    }
+  @MessageMapping("/chat.sendMessage/{bookingId}")
+  @SendTo("/topic/chat/{bookingId}")
+  public ChatMessage sendMessage(
+      @DestinationVariable String bookingId, @Payload ChatMessage chatMessage) {
+    chatMessage.setChatId(bookingId);
+    return chatRepository.save(chatMessage);
+  }
+
+  @MessageMapping("/chat.typing/{chatId}")
+  @SendTo("/topic/chat/{chatId}/typing")
+  public TypingEvent handleTyping(@DestinationVariable String chatId, TypingEvent typingEvent) {
+    return typingEvent;
+  }
 }

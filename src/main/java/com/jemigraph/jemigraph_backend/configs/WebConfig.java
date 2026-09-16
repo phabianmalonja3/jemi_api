@@ -16,52 +16,53 @@ import java.util.List;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${app.cors.allowed-origins}")
-    private String allowedOrigins;
-    @Value("${upload.dir:uploads/}")
-    private String uploadDir;
+  @Value("${app.cors.allowed-origins}")
+  private String allowedOrigins;
 
+  @Value("${upload.dir:uploads/}")
+  private String uploadDir;
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(
+        Arrays.asList(
+            "http://168.144.135.14:3000",
+            "http://localhost:3000",
+            "https://jemigraph.com",
+            "https://jemigraph.co.tz",
+            "https://www.jemigraph.co.tz"));
 
-        // Orodha kamili ya domain zinazohitajika
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://168.144.135.14:3000",
-                "http://localhost:3000",
-                "https://jemigraph.com",
-                "https://jemigraph.co.tz",
-                "https://www.jemigraph.co.tz"
-        ));
+    configuration.setAllowedMethods(
+        Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowCredentials(true);
+    configuration.setMaxAge(3600L);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Hakikisha unatumia Arrays.asList("*") badala ya List.of kwa compatibility
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+  @Override
+  public void addCorsMappings(CorsRegistry registry) {
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
+    String[] origins = allowedOrigins.split(",");
 
-        String[] origins = allowedOrigins.split(",");
+    registry
+        .addMapping("/**")
+        .allowedOrigins(origins)
+        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+        .allowedHeaders("*")
+        .allowCredentials(true)
+        .maxAge(3600);
+  }
 
-        registry.addMapping("/**")  // Change from /api/** to /** for all endpoints
-                .allowedOrigins(origins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
+  @Override
+  public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir)
-                .setCachePeriod(3600);
-    }
+    registry
+        .addResourceHandler("/uploads/**")
+        .addResourceLocations("file:" + uploadDir)
+        .setCachePeriod(3600);
+  }
 }

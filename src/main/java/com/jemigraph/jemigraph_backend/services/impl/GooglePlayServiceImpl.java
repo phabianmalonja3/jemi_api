@@ -33,24 +33,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class GooglePlayServiceImpl implements GooglePlayService {
-
   private static final Logger log = LoggerFactory.getLogger(GooglePlayServiceImpl.class);
   private static final String APPLICATION_NAME = "MySystemDownloadTracker";
-
   private final Resource credentialsResource;
   private final ObjectMapper objectMapper = new ObjectMapper();
-
   private volatile AndroidPublisher publisher;
   private volatile Playdeveloperreporting reportingClient;
-
   public GooglePlayServiceImpl(@Value("${app.google.play-key-path}") Resource credentialsResource) {
     this.credentialsResource = credentialsResource;
   }
-
-  // ---------------------------------------------------------------------------
-  // Client construction (cached)
-  // ---------------------------------------------------------------------------
-
   private AndroidPublisher publisher() throws IOException {
     AndroidPublisher p = this.publisher;
     if (p == null) {
@@ -109,10 +100,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Edit lifecycle helper
-  // ---------------------------------------------------------------------------
-
   private <T> T withEdit(String packageName, EditAction<T> action) throws IOException {
     AndroidPublisher.Edits edits = publisher().edits();
     AppEdit edit = edits.insert(packageName, null).execute();
@@ -166,17 +153,14 @@ public class GooglePlayServiceImpl implements GooglePlayService {
         (edits, editId) -> {
           TracksListResponse tracksResponse = edits.tracks().list(packageName, editId).execute();
           List<Track> tracks = tracksResponse == null ? null : tracksResponse.getTracks();
-
           ObjectNode root = objectMapper.createObjectNode();
           root.put("packageName", packageName);
           ArrayNode tracksArray = root.putArray("tracks");
-
           if (tracks != null) {
             for (Track track : tracks) {
               ObjectNode trackNode = tracksArray.addObject();
               trackNode.put("trackName", track.getTrack());
               ArrayNode releasesArray = trackNode.putArray("releases");
-
               if (track.getReleases() != null) {
                 for (TrackRelease release : track.getReleases()) {
                   ObjectNode releaseNode = releasesArray.addObject();
@@ -212,7 +196,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
         (edits, editId) -> {
           BundlesListResponse bundlesResponse = edits.bundles().list(packageName, editId).execute();
           List<Bundle> bundles = bundlesResponse == null ? null : bundlesResponse.getBundles();
-
           ObjectNode root = objectMapper.createObjectNode();
           root.put("packageName", packageName);
           ArrayNode bundlesArray = root.putArray("bundles");
@@ -236,11 +219,8 @@ public class GooglePlayServiceImpl implements GooglePlayService {
   public String fetchErrorReportsAndVitals(String packageName) throws IOException {
     ObjectNode root = objectMapper.createObjectNode();
     root.put("packageName", packageName);
-
     try {
       Playdeveloperreporting reporting = reportingClient();
-
-      // GET request (correct method per API docs)
       GooglePlayDeveloperReportingV1beta1SearchErrorReportsResponse response =
           reporting
               .vitals()
@@ -249,10 +229,8 @@ public class GooglePlayServiceImpl implements GooglePlayService {
               .search("apps/" + packageName)
               .setPageSize(50)
               .execute();
-
       List<GooglePlayDeveloperReportingV1beta1ErrorReport> reports =
           response == null ? null : response.getErrorReports();
-
       ArrayNode reportsArray = root.putArray("errorReports");
       if (reports != null) {
         for (GooglePlayDeveloperReportingV1beta1ErrorReport report : reports) {
@@ -271,7 +249,6 @@ public class GooglePlayServiceImpl implements GooglePlayService {
           if (report.getAppVersion() != null) {
             node.put("versionCode", report.getAppVersion().getVersionCode());
           }
-          //					node.put("createTime", report);
         }
       }
 

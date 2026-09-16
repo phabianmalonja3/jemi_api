@@ -1,6 +1,8 @@
 package com.jemigraph.jemigraph_backend.services;
 
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
+import java.math.BigDecimal;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -8,7 +10,7 @@ public interface EmailService {
   void sendAdminOtp(String toEmail);
 
   void sendLoginAlertEmail(
-		  String recipientEmail, String userName, String ipAddress, String loginTime, String userAgent);
+      String recipientEmail, String userName, String ipAddress, String loginTime, String userAgent);
 
   void sendBookingConfirmation(
       String toEmail, String clientName, String photographerName, String date);
@@ -32,4 +34,7 @@ public interface EmailService {
       String expiryDate);
 
   void sendEmailToAdmin(String s);
+
+  void sendApprovalNotificationToAdmin(
+      String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId);
 }
