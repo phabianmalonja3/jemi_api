@@ -14,7 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("")
+@RequestMapping("/subscription-plans")
 @RequiredArgsConstructor
 public class SubscriptionController {
   private final SubscriptionPlanService subscriptionPlanService;
