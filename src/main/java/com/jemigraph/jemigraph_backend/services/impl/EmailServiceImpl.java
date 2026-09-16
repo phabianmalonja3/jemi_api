@@ -30,6 +30,7 @@ public class EmailServiceImpl implements EmailService {
 
   private static final String FROM_EMAIL = "help@jemigraph.co.tz";
   private static final String FROM_NAME = "Jemigraph";
+  private static final String ADMIN_EMAIL = "admin@jemigraph.co.tz";
 
   private final JavaMailSender mailSender;
   private final UserRepository userRepository;
@@ -658,7 +659,7 @@ public class EmailServiceImpl implements EmailService {
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
       helper.setFrom(FROM_EMAIL, FROM_NAME);
-      helper.setTo("admin@jemigraph.com"); // Weka email ya Super Admin hapa
+      helper.setTo(ADMIN_EMAIL); // Weka email ya Super Admin hapa
       helper.setSubject("New Subscription Change Request - Jemigraph");
       String approveUrl =
           "https://jemigraph.co.tz/subscriptions/process?id=" + requestId + "&action=APPROVE";

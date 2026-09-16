@@ -200,5 +200,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             + user.getEmail()
             + " expiring on: "
             + expiryDate);
+
+    request.setStatus(RequestStatus.APPROVED);
+    subscriptionRequestRepository.save(request);
+
+    // 2. Andaa data zinazohitajika na email template
+    String userEmail = user.getEmail();
+    String userName = user.getName() != null ? user.getName() : "Valued Customer";
+    String planName = plan.getName().toString();
+    String amount = plan.getPrice().toString(); // Au badilisha format iwe unayotaka
+    String startDate =
+        LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    String expiryDateStr =
+        expiryDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+    emailService.sendSubscriptionActivated(
+        userEmail, userName, planName, amount, startDate, expiryDateStr);
   }
 }
