@@ -10,10 +10,11 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/subscription-plans")
+@RequestMapping("")
 @RequiredArgsConstructor
 public class SubscriptionController {
   private final SubscriptionPlanService subscriptionPlanService;
@@ -31,6 +32,7 @@ public class SubscriptionController {
     return ResponseEntity.ok(updatedUser);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @PostMapping("/request-change")
   public ResponseEntity<String> requestSubscriptionChange(
       @RequestBody SubscriptionRequestDTO request) {
@@ -42,13 +44,10 @@ public class SubscriptionController {
         "Subscription change request sent successfully. Awaiting Super Admin approval.");
   }
 
-  // Endpoint ya pili inayofuta: Inapokea POST request kutoka frontend na ku-update database
   @PostMapping("/process-action")
   public ResponseEntity<String> processSubscriptionAction(@RequestBody ProcessActionDTO request) {
     try {
       boolean isApproved = "APPROVE".equalsIgnoreCase(request.getAction());
-
-      // Inasimamia database update (Accept au Reject)
       subscriptionService.handleAdminAction(request.getId(), isApproved);
 
       return ResponseEntity.ok("Action processed successfully.");
