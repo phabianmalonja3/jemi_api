@@ -77,7 +77,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new PendingVerificationException("ACCOUNT_PENDING_VERIFICATION");
     }
 
-    // Pata IP na User-Agent kupitia RequestContextHolder
     String ipAddress = "Unknown IP";
     String userAgent =
         (deviceName != null && !deviceName.isEmpty()) ? deviceName : "Unknown Device";
@@ -140,9 +139,16 @@ public class AuthenticationServiceImpl implements AuthentificationService {
           .accessToken(null)
           .refreshToken(null)
           .build();
-    }
+    } else {
 
-    throw new RuntimeException("Unauthorized role access");
+      String jwtToken = jwtService.generateRefreshToken(email);
+      String jwtRefreshToken = jwtService.generateRefreshToken(email);
+      return AuthResponse.builder()
+          .user(userMapper.toDto(user))
+          .accessToken(jwtToken)
+          .refreshToken(jwtRefreshToken)
+          .build();
+    }
   }
 
   private String getClientIp(jakarta.servlet.http.HttpServletRequest request) {

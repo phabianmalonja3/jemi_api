@@ -83,8 +83,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(NotPhotographerException.class)
-  public ResponseEntity<ApiErrorResponseDTO> handleNotAphotographer(
-      NotPhotographerException ex) { // Imerekebishwa kuwa NotPhotographerException
+  public ResponseEntity<ApiErrorResponseDTO> handleNotAphotographer(NotPhotographerException ex) {
     ApiErrorResponseDTO response =
         new ApiErrorResponseDTO(
             HttpStatus.FORBIDDEN.value(),

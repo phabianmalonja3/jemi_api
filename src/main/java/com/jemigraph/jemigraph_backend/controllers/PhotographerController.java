@@ -41,8 +41,20 @@ public class PhotographerController {
 
   @GetMapping
   public ResponseEntity<Page<PhotographerProfileDTO>> getAllPhotographersNear(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-    return ResponseEntity.ok(userService.getPhotographers(page, size));
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(required = false) String search) {
+
+    return ResponseEntity.ok(userService.getPhotographers(page, size, search));
+  }
+
+  @GetMapping("/filter")
+  public ResponseEntity<Page<PhotographerProfileDTO>> filterPhotographer(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(required = false) String search) {
+
+    return ResponseEntity.ok(userService.filterPhotographers(page, size, search));
   }
 
   @PostMapping("/packages")
@@ -94,5 +106,11 @@ public class PhotographerController {
       @RequestParam(defaultValue = "0.0") double lng) {
 
     return ResponseEntity.ok(liveStatusService.getNearbyPhotographers(lat, lng));
+  }
+
+  @GetMapping("/top-rated")
+  public ResponseEntity<Page<PhotographerProfileDTO>> getTopRatedPhotographers(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(userService.getTopRatedPhotographers(page, size));
   }
 }
