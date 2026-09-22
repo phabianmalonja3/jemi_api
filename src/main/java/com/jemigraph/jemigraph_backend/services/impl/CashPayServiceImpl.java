@@ -539,124 +539,27 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
   @Override
   public List<SubscriberResponseDto> getAllSubscribers() {
-    return List.of();
-  }
 
-  //  @Override
-  //  public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId) {
-  //
-  //    Payment payment =
-  //        paymentRepository
-  //            .findByOrderId(orderId)
-  //            .orElseThrow(() -> new RuntimeException("Payment not found with orderId: " +
-  // orderId));
-  //
-  //    User user =
-  //        userRepository
-  //            .findById(payment.getUserId())
-  //            .orElseThrow(() -> new RuntimeException("User not found"));
-  //
-  //    SubscriptionPlan plan = null;
-  //    if (payment.getPlanId() != null) {
-  //      plan = subscriptionPlanRepository.findById(payment.getPlanId()).orElse(null);
-  //    }
-  //
-  //    LocalDateTime now = LocalDateTime.now();
-  //    LocalDateTime paymentDate = payment.getCreatedAt() != null ? payment.getCreatedAt() : now;
-  //
-  //    String startDate = "";
-  //    String endDate = "";
-  //    String planName = "N/A";
-  //    String planDescription = "";
-  //    int durationInDays = 0;
-  //
-  //    if (plan != null) {
-  //      planName = plan.getName() != null ? plan.getName().toString() : "N/A";
-  //      planDescription = plan.getDescription() != null ? plan.getDescription() : "";
-  //      durationInDays = plan.getDurationInDays() != null ? plan.getDurationInDays() : 0;
-  //
-  //      startDate = paymentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-  //      endDate =
-  //
-  // paymentDate.plusDays(durationInDays).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-  //    }
-  //
-  //    boolean isActive =
-  //        user.getSubscriptionStatus() == SubscriptionStatus.ACTIVE
-  //            && user.getSubscriptionExpiresAt() != null
-  //            && user.getSubscriptionExpiresAt().isAfter(now);
-  //
-  //    return SubscriptionPaymentResponseDTO.builder()
-  //        .orderId(payment.getOrderId())
-  //        .status(payment.getStatus() != null ? payment.getStatus().name() : null)
-  //        .amount(payment.getAmount())
-  //        .planId(payment.getPlanId() != null ? payment.getPlanId().toString() : null)
-  //        .transactionNumber(payment.getTransactionNumber())
-  //        .referenceNumber(payment.getReferenceNumber())
-  //        .receiptNumber(payment.getReceiptNumber())
-  //        .phoneNumber(payment.getPhoneNumber())
-  //        .planName(planName)
-  //        .planDescription(planDescription)
-  //        .durationInDays(durationInDays)
-  //        .startDate(startDate)
-  //        .endDate(endDate)
-  //        .subscriptionActive(isActive)
-  //        .subscriptionStatus(isActive ? "ACTIVE" : (plan != null ? "INACTIVE" : "N/A"))
-  //        .build();
-  //  }
-  //
-  //  @Override
-  //  public List<SubscriberResponseDto> getAllSubscribers() {
-  //    List<User> photographers =
-  //        userRepository.findAll().stream()
-  //            .filter(user -> user.getRole() == UserRole.PHOTOGRAPHER)
-  //            .toList();
-  //
-  //    List<SubscriberResponseDto> subscribersList = new ArrayList<>();
-  //
-  //    for (User user : photographers) {
-  //      // Tunachuja wale wote wenye status (Active, Trial, n.k.)
-  //      if (user.getSubscriptionStatus() != null) {
-  //
-  //        SubscriptionPlan activePlan = null;
-  //
-  //        // 1. ANGALIA KWANZA: Labda plan imehifadhiwa moja kwa moja kwenye User (Admin approval
-  // /
-  //        // Direct assignment)
-  //        if (user.getSubscriptionPlan() != null) {
-  //          activePlan = user.getSubscriptionPlan();
-  //        } else {
-  //          // 2. KAMA HAKUNA: Ndipo tuangalie kupitia Payment ya mwisho (kama ilivyokuwa mwanzo)
-  //          Payment latestPayment =
-  //              paymentRepository
-  //                  .findFirstByUserIdAndStatusOrderByCreatedAtDesc(
-  //                      user.getId(), SystemPaymentStatus.SUCCESS)
-  //                  .orElse(null);
-  //
-  //          if (latestPayment != null && latestPayment.getPlanId() != null) {
-  //            activePlan =
-  //                subscriptionPlanRepository.findById(latestPayment.getPlanId()).orElse(null);
-  //          }
-  //        }
-  //
-  //        SubscriberResponseDto dto =
-  //            SubscriberResponseDto.builder()
-  //                .userId(user.getId())
-  //                .email(user.getEmail())
-  //                .subscriptionStatus(user.getSubscriptionStatus().name())
-  //                .expiresAt(user.getSubscriptionExpiresAt())
-  //                .planName(
-  //                    activePlan != null ? activePlan.getName().toString() : "Trial / Admin
-  // Assigned")
-  //                .planAmount(activePlan != null ? activePlan.getPrice() : BigDecimal.ZERO)
-  //                .durationInDays(activePlan != null ? activePlan.getDurationInDays() : 0)
-  //                .build();
-  //
-  //        subscribersList.add(dto);
-  //      }
-  //    }
-  //    return subscribersList;
-  //  }
+    return subscriptionRepository.findAll().stream()
+        .map(
+            subscription -> {
+              User user = subscription.getUser();
+
+              SubscriptionPlan plan = subscription.getSubscriptionPackage();
+
+              return SubscriberResponseDto.builder()
+                  .userId(user.getId())
+                  .email(user.getEmail())
+                  .subscriptionStatus(
+                      subscription.getStatus() != null ? subscription.getStatus().name() : null)
+                  .expiresAt(subscription.getExpiresAt())
+                  .planName(plan != null && plan.getName() != null ? plan.getName().name() : null)
+                  .planAmount(plan != null ? plan.getPrice() : null)
+                  .durationInDays(plan != null ? plan.getDurationInDays() : null)
+                  .build();
+            })
+        .toList();
+  }
 
   @Override
   public byte[] generateReceiptPdf(String orderId) throws Exception {

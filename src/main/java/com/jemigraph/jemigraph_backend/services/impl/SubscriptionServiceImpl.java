@@ -100,12 +100,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Override
   @Transactional
   public void activateSubscription(UUID userId, UUID planId) {
-
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
     SubscriptionPlan plan =
         subscriptionPlanRepository
             .findById(planId)
@@ -118,7 +116,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             : 30;
 
     LocalDateTime now = LocalDateTime.now();
-
     Subscription subscription =
         subscriptionRepository
             .findByUserId(userId)
@@ -129,27 +126,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             ? subscription.getExpiresAt()
             : now;
 
-    SubscriptionPlan pkg =
-        subscriptionPlanRepository
-            .findByName(SubscriptionPlanType.valueOf(plan.getName().toString()))
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Package not found for subscription plan: " + plan.getName()));
+    subscription.setSubscriptionPackage(plan);
 
-    subscription.setSubscriptionPackage(pkg);
     subscription.setStatus(SubscriptionStatus.ACTIVE);
-    subscription.setStartedAt(
-        subscription.getStartedAt() != null ? subscription.getStartedAt() : now);
+
+    subscription.setStartedAt(baseDate);
 
     subscription.setExpiresAt(baseDate.plusDays(durationDays));
-
     subscriptionRepository.save(subscription);
 
     System.out.println(
         "Subscription successfully activated for user: "
             + user.getEmail()
-            + " expiring on: "
+            + ", plan: "
+            + plan.getName()
+            + ", expires on: "
             + subscription.getExpiresAt());
   }
 

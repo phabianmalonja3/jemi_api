@@ -233,10 +233,6 @@ public class AdminServiceImpl implements AdminService {
     return verifiedUser;
   }
 
-  // ============================================================
-  // UNVERIFIED PHOTOGRAPHERS
-  // ============================================================
-
   @Override
   @Transactional(readOnly = true)
   public List<UserDTO> getUnverifiedPhotographers() {
