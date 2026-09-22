@@ -1,4 +1,5 @@
 package com.jemigraph.jemigraph_backend.services;
+
 import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
 import com.jemigraph.jemigraph_backend.Entities.User;
@@ -12,16 +13,19 @@ import java.util.UUID;
 
 @Service
 public interface AdminService {
-    User accountSuspension(UUID uuid);
-     double getSystemBalance();
-    Page<TransactionAdminDTO> getAllTransactionsForAdmin(Pageable pageable);
-    Page<UserDTO> findFilteredUsers(String name, UserRole role, Pageable pageable);
+  User accountSuspension(UUID uuid);
 
-    List<TransactionAdminDTO> getRecentTransactions(Pageable topFive);
+  double getSystemBalance();
 
-    User verifyPhotographer(UUID userId);
+  Page<TransactionAdminDTO> getAllTransactionsForAdmin(Pageable pageable);
 
-    List<UserDTO> getUnverifiedPhotographers();
+  Page<UserDTO> findFilteredUsers(String name, UserRole role, Pageable pageable);
 
-    void removeAccount(UUID userId);
+  List<TransactionAdminDTO> getRecentTransactions(Pageable topFive);
+
+  User verifyPhotographer(UUID userId);
+
+  List<UserDTO> getUnverifiedPhotographers();
+
+  void removeAccount(UUID userId);
 }

@@ -6,13 +6,10 @@ import com.jemigraph.jemigraph_backend.enums.BookingType;
 import com.jemigraph.jemigraph_backend.enums.PaymentStatus;
 import com.jemigraph.jemigraph_backend.events.Review;
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.envers.Audited;
-import org.hibernate.envers.RelationTargetAuditMode;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.*;
 
 @Entity
 @Table(name = "bookings")
@@ -72,6 +69,9 @@ public class Bookings {
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"booking"})
     private Review review;
+    @Column(name = "end_time", nullable = true)
+    private LocalDateTime endTime;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -80,6 +80,7 @@ public class Bookings {
             this.pickupTime = LocalDateTime.now();
         }
     }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

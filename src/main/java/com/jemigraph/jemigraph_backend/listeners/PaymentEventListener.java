@@ -10,7 +10,6 @@ import com.jemigraph.jemigraph_backend.events.PaymentInitiationEvent;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.SubscriptionService;
-import com.jemigraph.jemigraph_backend.services.impl.CashPayServiceImpl;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class PaymentEventListener {
 
-	private final CashPayServiceImpl cashPayService;
+//	private final CashPayServiceImpl cashPayService;
 	private final SubscriptionPlanRepository subscriptionPlanRepository;
 	private final PaymentRepository paymentRepository;
 	// Rekebisha hapa iwe Repository ya JPA ya Payment

@@ -1,9 +1,7 @@
 package com.jemigraph.jemigraph_backend.repositories;
 
 import com.jemigraph.jemigraph_backend.Entities.User;
-import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +36,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   List<User> findByRoleAndIsVerified(UserRole role, boolean isVerified);
 
-  //    List<PkgDTO> findAllByPackages(UserRole role, boolean isVerified);
+  //    List<PhotographerPackageDTO> findAllByPackages(UserRole role, boolean isVerified);
   Page<User> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
   @EntityGraph(attributePaths = {"userProfile"})
@@ -60,14 +58,4 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   @Query("SELECT u FROM User u WHERE u.role = :role ORDER BY u.averageRating DESC")
   Page<User> findAllByRoleOrderByAverageRatingDesc(@Param("role") UserRole role, Pageable pageable);
-
-  @Query("SELECT u FROM User u WHERE u.currentDebt > 0 AND u.debtStartDate <= :threshold")
-  List<User> findOverdueDebtors(@Param("threshold") LocalDateTime threshold);
-
-  @Query(
-      "SELECT u FROM User u WHERE u.role = :role AND u.subscriptionStatus = :status AND u.subscriptionExpiresAt < :now")
-  List<User> findExpiredPhotographers(
-      @Param("role") UserRole role,
-      @Param("status") SubscriptionStatus status,
-      @Param("now") LocalDateTime now);
 }

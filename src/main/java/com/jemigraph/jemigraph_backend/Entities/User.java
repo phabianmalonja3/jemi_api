@@ -1,22 +1,19 @@
 package com.jemigraph.jemigraph_backend.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.jemigraph.jemigraph_backend.enums.AccessStatus;
-import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "users")
@@ -98,20 +95,16 @@ public class User implements UserDetails {
     @JsonIgnoreProperties("user")
     private UserProfile userProfile;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "subscription_status")
-    @Builder.Default
-    private SubscriptionStatus subscriptionStatus = SubscriptionStatus.INACTIVE;
 
-    @Column(name = "subscription_expires_at")
-    private LocalDateTime subscriptionExpiresAt;
-
-    @Column(name = "trial_ends_at")
-    private LocalDateTime trialEndsAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_plan_id")
     private SubscriptionPlan subscriptionPlan;
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Pkg> packages;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
+    private List<Gallery> gallery = new ArrayList<>();
 
     public void setUserProfile(UserProfile userProfile) {
         if (userProfile == null) {
@@ -123,69 +116,6 @@ public class User implements UserDetails {
         }
         this.userProfile = userProfile;
     }
-
-    public void updateDebtStatus() {
-        if (currentDebt.compareTo(BigDecimal.ZERO) > 0 && debtStartDate != null) {
-            long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(debtStartDate, LocalDateTime.now());
-            if (daysOverdue > 7) {
-                this.accountLockedDueToDebt = true;
-            }
-        }
-    }
-
-
-    public boolean isOnTrial() {
-        return this.trialEndsAt != null && LocalDateTime.now().isBefore(this.trialEndsAt);
-    }
-
-    public AccessStatus getAccessStatus(){
-
-        LocalDateTime now = LocalDateTime.now();
-
-
-        // Active subscription
-        if(subscriptionStatus == SubscriptionStatus.ACTIVE
-                && subscriptionExpiresAt != null
-                && now.isBefore(subscriptionExpiresAt)){
-
-            return AccessStatus.ACTIVE;
-        }
-
-
-        // 30 days trial
-        if(trialEndsAt != null
-                && now.isBefore(trialEndsAt)){
-
-            return AccessStatus.TRIAL;
-        }
-
-
-        // Grace period after subscription expiry
-        if(subscriptionExpiresAt != null
-                && now.isBefore(subscriptionExpiresAt.plusDays(3))){
-
-            return AccessStatus.GRACE_PERIOD;
-        }
-
-
-        return AccessStatus.EXPIRED;
-    }
-
-
-    public boolean hasActiveAccess(){
-
-        AccessStatus status = getAccessStatus();
-
-        return status == AccessStatus.ACTIVE
-                || status == AccessStatus.TRIAL
-                || status == AccessStatus.GRACE_PERIOD;
-    }
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Pkg> packages;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
-    private List<Gallery> gallery = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

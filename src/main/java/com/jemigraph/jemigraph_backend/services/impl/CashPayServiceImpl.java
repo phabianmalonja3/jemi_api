@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.Payment;
+import com.jemigraph.jemigraph_backend.Entities.Subscription;
 import com.jemigraph.jemigraph_backend.Entities.SubscriptionPlan;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.PaymentRepository;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.SystemPaymentStatus;
-import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
+import com.jemigraph.jemigraph_backend.repositories.SubscriptionRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.EmailService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
@@ -60,6 +61,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
   private final SimpMessagingTemplate messagingTemplate;
   private final EmailService emailService;
+  private final SubscriptionRepository subscriptionRepository;
 
   @Value("${cashpay.base-url}")
   private String baseUrl;
@@ -80,32 +82,33 @@ public class CashPayServiceImpl implements PaymentSystemService {
         throw new RuntimeException("User is required");
       }
 
-      LocalDateTime now = LocalDateTime.now();
-      boolean hasActiveSubscription =
-          user.getSubscriptionStatus() == SubscriptionStatus.ACTIVE
-              && user.getSubscriptionExpiresAt() != null
-              && user.getSubscriptionExpiresAt().isAfter(now);
-
-      if (hasActiveSubscription) {
-        throw new RuntimeException(
-            "You already have an active subscription expiring on: "
-                + user.getSubscriptionExpiresAt());
-      }
       if (planId == null) {
         throw new RuntimeException("Plan ID is required");
       }
+
+      LocalDateTime now = LocalDateTime.now();
+
+      Subscription subscription = subscriptionRepository.findByUserId(user.getId()).orElse(null);
+
+      if (subscription != null
+          && subscription.getStatus() == SubscriptionStatus.ACTIVE
+          && subscription.getExpiresAt() != null
+          && subscription.getExpiresAt().isAfter(now)) {
+
+        throw new RuntimeException(
+            "You already have an active subscription expiring on: " + subscription.getExpiresAt());
+      }
+
       SubscriptionPlan plan =
           subscriptionPlanRepository
               .findById(planId)
               .orElseThrow(() -> new RuntimeException("Subscription plan not found: " + planId));
 
       if (!plan.isActive()) {
-
         throw new RuntimeException("Subscription plan is inactive: " + plan.getName());
       }
 
       if (plan.getPrice() == null) {
-
         throw new RuntimeException("Subscription plan price is not configured: " + plan.getName());
       }
 
@@ -114,23 +117,27 @@ public class CashPayServiceImpl implements PaymentSystemService {
       String amount = formatAmount(planAmount);
 
       String formattedPhone = formatPhoneNumber(phoneNumber);
+
       String token = getCashPayToken();
+
       String transactionNumber = generateTransactionNumber();
 
-      log.info(
-          "Starting CashPay payment. transactionNumber={}, user={}, plan={}, amount={}, phone={}",
-          transactionNumber,
-          user.getEmail(),
-          plan.getName(),
-          amount,
-          formattedPhone);
-
+      //      log.info(
+      //          "Starting CashPay payment. transactionNumber={}, user={}, plan={}, amount={},
+      // phone={}",
+      //          transactionNumber,
+      //          user.getEmail(),
+      //          plan.getName(),
+      //          amount,
+      //          formattedPhone);
+      //
       String referenceNumber = generatePaymentReference(token, transactionNumber);
+      //
 
-      log.info(
-          "CashPay reference generated. transactionNumber={}, referenceNumber={}",
-          transactionNumber,
-          referenceNumber);
+      //       =========================================================
+      //       SEND USSD PUSH
+      //       =========================================================
+
       JsonNode ussdResponse = sendUssdPush(token, transactionNumber, formattedPhone, amount);
 
       String ussdStatus = ussdResponse.path("status").asText();
@@ -143,6 +150,11 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
         throw new RuntimeException("CashPay USSD Push failed: " + description);
       }
+
+      // =========================================================
+      // SAVE PAYMENT
+      // =========================================================
+
       Payment payment =
           Payment.builder()
               .orderId(transactionNumber)
@@ -160,11 +172,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
       paymentRepository.save(payment);
 
-      log.info(
-          "CashPay payment saved as PENDING. orderId={}, transactionNumber={}, referenceNumber={}",
-          transactionNumber,
-          transactionNumber,
-          referenceNumber);
       return PaymentInitiationResponse.builder()
           .orderId(transactionNumber)
           .status("PENDING")
@@ -174,7 +181,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
           .build();
 
     } catch (Exception e) {
-      log.error("CashPay payment initiation failed", e);
+
       throw new RuntimeException("Failed to initiate CashPay payment", e);
     }
   }
@@ -196,8 +203,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
     try {
 
-      log.debug("Requesting CashPay authentication token");
-
       ResponseEntity<String> response =
           restTemplate.exchange(tokenUrl, HttpMethod.POST, request, String.class);
 
@@ -212,8 +217,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
         throw new RuntimeException("CashPay token was not returned");
       }
-
-      log.debug("CashPay authentication successful");
 
       return token;
 
@@ -339,12 +342,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
     HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
-    log.info(
-        "Sending CashPay USSD push. transactionNumber={}, phone={}, amount={}",
-        transactionNumber,
-        phoneNumber,
-        amount);
-
     try {
 
       ResponseEntity<String> response =
@@ -356,8 +353,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
       }
 
       JsonNode json = objectMapper.readTree(response.getBody());
-
-      log.info("CashPay USSD response: {}", json);
 
       return json;
 
@@ -415,7 +410,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
   public boolean handleCallback(PaymentCallbackDto callbackPayload) {
     try {
       if (callbackPayload == null) {
-        log.warn("Received empty CashPay callback");
+        //        log.warn("Received empty CashPay callback");
         return false;
       }
       String transactionNumber = callbackPayload.getTransactionNumber();
@@ -429,42 +424,28 @@ public class CashPayServiceImpl implements PaymentSystemService {
           || transactionNumber.trim().isEmpty()
           || paymentStatus == null
           || paymentStatus.trim().isEmpty()) {
-        log.warn("Invalid CashPay callback: missing transactionNumber or status");
+        //        log.warn("Invalid CashPay callback: missing transactionNumber or status");
         return false;
       }
 
       String transaction = transactionNumber;
 
-      log.info(
-          "CashPay callback received. transactionNumber={}, status={}, referenceNumber={}, receiptNumber={}, provider={}, amount={}, phone={}",
-          transaction,
-          paymentStatus,
-          referenceNumberObj,
-          receiptNumberObj,
-          providerObj,
-          amountObj,
-          phoneObj);
-
       Payment payment = paymentRepository.findByTransactionNumber(transaction).orElse(null);
 
       if (payment == null) {
-        log.warn("Payment not found for CashPay transactionNumber={}", transaction);
+        //        log.warn("Payment not found for CashPay transactionNumber={}", transaction);
         return false;
       }
 
       if (payment.isCallbackProcessed()) {
-        log.info("CashPay callback already processed. transactionNumber={}", transaction);
+        //        log.info("CashPay callback already processed. transactionNumber={}", transaction);
         return true;
       }
 
       if (referenceNumberObj != null && payment.getReferenceNumber() != null) {
         String callbackReference = referenceNumberObj.toString();
         if (!payment.getReferenceNumber().equals(callbackReference)) {
-          log.warn(
-              "CashPay reference mismatch. transactionNumber={}, expected={}, received={}",
-              transaction,
-              payment.getReferenceNumber(),
-              callbackReference);
+
           return false;
         }
       }
@@ -473,15 +454,11 @@ public class CashPayServiceImpl implements PaymentSystemService {
         try {
           BigDecimal callbackAmount = new BigDecimal(amountObj.toString());
           if (payment.getAmount().compareTo(callbackAmount) != 0) {
-            log.warn(
-                "CashPay amount mismatch. transactionNumber={}, expected={}, received={}",
-                transaction,
-                payment.getAmount(),
-                callbackAmount);
+
             return false;
           }
         } catch (NumberFormatException e) {
-          log.warn("Invalid amount in CashPay callback: {}", amountObj);
+          //          log.warn("Invalid amount in CashPay callback: {}", amountObj);
           return false;
         }
       }
@@ -516,26 +493,13 @@ public class CashPayServiceImpl implements PaymentSystemService {
         payment.setCallbackProcessed(true);
         paymentRepository.save(payment);
 
-        log.info(
-            "CashPay payment marked SUCCESS. transactionNumber={}, paymentId={}",
-            transaction,
-            payment.getId());
-
         subscriptionService.activateSubscription(payment.getUserId(), payment.getPlanId());
-
-        log.info(
-            "Subscription activated. userId={}, planId={}",
-            payment.getUserId(),
-            payment.getPlanId());
 
         try {
           sendPaymentWebSocketNotification(
               payment, "SUCCESS", "Payment successful. Your subscription is now active.");
         } catch (Exception e) {
-          log.error(
-              "Failed to send payment SUCCESS WebSocket notification. orderId={}",
-              payment.getOrderId(),
-              e);
+
         }
 
         return true;
@@ -546,19 +510,11 @@ public class CashPayServiceImpl implements PaymentSystemService {
         payment.setCallbackProcessed(true);
         paymentRepository.save(payment);
 
-        log.warn(
-            "CashPay payment marked FAILED. transactionNumber={}, paymentId={}",
-            transaction,
-            payment.getId());
-
         try {
           sendPaymentWebSocketNotification(
               payment, "FAILED", "Your payment could not be completed. Please try again.");
         } catch (Exception e) {
-          log.error(
-              "Failed to send payment FAILED WebSocket notification. orderId={}",
-              payment.getOrderId(),
-              e);
+
         }
 
         return true;
@@ -578,115 +534,129 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
   @Override
   public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId) {
-
-    Payment payment =
-        paymentRepository
-            .findByOrderId(orderId)
-            .orElseThrow(() -> new RuntimeException("Payment not found with orderId: " + orderId));
-
-    User user =
-        userRepository
-            .findById(payment.getUserId())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-    SubscriptionPlan plan = null;
-    if (payment.getPlanId() != null) {
-      plan = subscriptionPlanRepository.findById(payment.getPlanId()).orElse(null);
-    }
-
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime paymentDate = payment.getCreatedAt() != null ? payment.getCreatedAt() : now;
-
-    String startDate = "";
-    String endDate = "";
-    String planName = "N/A";
-    String planDescription = "";
-    int durationInDays = 0;
-
-    if (plan != null) {
-      planName = plan.getName() != null ? plan.getName().toString() : "N/A";
-      planDescription = plan.getDescription() != null ? plan.getDescription() : "";
-      durationInDays = plan.getDurationInDays() != null ? plan.getDurationInDays() : 0;
-
-      startDate = paymentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-      endDate =
-          paymentDate.plusDays(durationInDays).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-    }
-
-    boolean isActive =
-        user.getSubscriptionStatus() == SubscriptionStatus.ACTIVE
-            && user.getSubscriptionExpiresAt() != null
-            && user.getSubscriptionExpiresAt().isAfter(now);
-
-    return SubscriptionPaymentResponseDTO.builder()
-        .orderId(payment.getOrderId())
-        .status(payment.getStatus() != null ? payment.getStatus().name() : null)
-        .amount(payment.getAmount())
-        .planId(payment.getPlanId() != null ? payment.getPlanId().toString() : null)
-        .transactionNumber(payment.getTransactionNumber())
-        .referenceNumber(payment.getReferenceNumber())
-        .receiptNumber(payment.getReceiptNumber())
-        .phoneNumber(payment.getPhoneNumber())
-        .planName(planName)
-        .planDescription(planDescription)
-        .durationInDays(durationInDays)
-        .startDate(startDate)
-        .endDate(endDate)
-        .subscriptionActive(isActive)
-        .subscriptionStatus(isActive ? "ACTIVE" : (plan != null ? "INACTIVE" : "N/A"))
-        .build();
+    return null;
   }
 
   @Override
   public List<SubscriberResponseDto> getAllSubscribers() {
-    List<User> photographers =
-        userRepository.findAll().stream()
-            .filter(user -> user.getRole() == UserRole.PHOTOGRAPHER)
-            .toList();
-
-    List<SubscriberResponseDto> subscribersList = new ArrayList<>();
-
-    for (User user : photographers) {
-      // Tunachuja wale wote wenye status (Active, Trial, n.k.)
-      if (user.getSubscriptionStatus() != null) {
-
-        SubscriptionPlan activePlan = null;
-
-        // 1. ANGALIA KWANZA: Labda plan imehifadhiwa moja kwa moja kwenye User (Admin approval /
-        // Direct assignment)
-        if (user.getSubscriptionPlan() != null) {
-          activePlan = user.getSubscriptionPlan();
-        } else {
-          // 2. KAMA HAKUNA: Ndipo tuangalie kupitia Payment ya mwisho (kama ilivyokuwa mwanzo)
-          Payment latestPayment =
-              paymentRepository
-                  .findFirstByUserIdAndStatusOrderByCreatedAtDesc(
-                      user.getId(), SystemPaymentStatus.SUCCESS)
-                  .orElse(null);
-
-          if (latestPayment != null && latestPayment.getPlanId() != null) {
-            activePlan =
-                subscriptionPlanRepository.findById(latestPayment.getPlanId()).orElse(null);
-          }
-        }
-
-        SubscriberResponseDto dto =
-            SubscriberResponseDto.builder()
-                .userId(user.getId())
-                .email(user.getEmail())
-                .subscriptionStatus(user.getSubscriptionStatus().name())
-                .expiresAt(user.getSubscriptionExpiresAt())
-                .planName(
-                    activePlan != null ? activePlan.getName().toString() : "Trial / Admin Assigned")
-                .planAmount(activePlan != null ? activePlan.getPrice() : BigDecimal.ZERO)
-                .durationInDays(activePlan != null ? activePlan.getDurationInDays() : 0)
-                .build();
-
-        subscribersList.add(dto);
-      }
-    }
-    return subscribersList;
+    return List.of();
   }
+
+  //  @Override
+  //  public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId) {
+  //
+  //    Payment payment =
+  //        paymentRepository
+  //            .findByOrderId(orderId)
+  //            .orElseThrow(() -> new RuntimeException("Payment not found with orderId: " +
+  // orderId));
+  //
+  //    User user =
+  //        userRepository
+  //            .findById(payment.getUserId())
+  //            .orElseThrow(() -> new RuntimeException("User not found"));
+  //
+  //    SubscriptionPlan plan = null;
+  //    if (payment.getPlanId() != null) {
+  //      plan = subscriptionPlanRepository.findById(payment.getPlanId()).orElse(null);
+  //    }
+  //
+  //    LocalDateTime now = LocalDateTime.now();
+  //    LocalDateTime paymentDate = payment.getCreatedAt() != null ? payment.getCreatedAt() : now;
+  //
+  //    String startDate = "";
+  //    String endDate = "";
+  //    String planName = "N/A";
+  //    String planDescription = "";
+  //    int durationInDays = 0;
+  //
+  //    if (plan != null) {
+  //      planName = plan.getName() != null ? plan.getName().toString() : "N/A";
+  //      planDescription = plan.getDescription() != null ? plan.getDescription() : "";
+  //      durationInDays = plan.getDurationInDays() != null ? plan.getDurationInDays() : 0;
+  //
+  //      startDate = paymentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+  //      endDate =
+  //
+  // paymentDate.plusDays(durationInDays).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+  //    }
+  //
+  //    boolean isActive =
+  //        user.getSubscriptionStatus() == SubscriptionStatus.ACTIVE
+  //            && user.getSubscriptionExpiresAt() != null
+  //            && user.getSubscriptionExpiresAt().isAfter(now);
+  //
+  //    return SubscriptionPaymentResponseDTO.builder()
+  //        .orderId(payment.getOrderId())
+  //        .status(payment.getStatus() != null ? payment.getStatus().name() : null)
+  //        .amount(payment.getAmount())
+  //        .planId(payment.getPlanId() != null ? payment.getPlanId().toString() : null)
+  //        .transactionNumber(payment.getTransactionNumber())
+  //        .referenceNumber(payment.getReferenceNumber())
+  //        .receiptNumber(payment.getReceiptNumber())
+  //        .phoneNumber(payment.getPhoneNumber())
+  //        .planName(planName)
+  //        .planDescription(planDescription)
+  //        .durationInDays(durationInDays)
+  //        .startDate(startDate)
+  //        .endDate(endDate)
+  //        .subscriptionActive(isActive)
+  //        .subscriptionStatus(isActive ? "ACTIVE" : (plan != null ? "INACTIVE" : "N/A"))
+  //        .build();
+  //  }
+  //
+  //  @Override
+  //  public List<SubscriberResponseDto> getAllSubscribers() {
+  //    List<User> photographers =
+  //        userRepository.findAll().stream()
+  //            .filter(user -> user.getRole() == UserRole.PHOTOGRAPHER)
+  //            .toList();
+  //
+  //    List<SubscriberResponseDto> subscribersList = new ArrayList<>();
+  //
+  //    for (User user : photographers) {
+  //      // Tunachuja wale wote wenye status (Active, Trial, n.k.)
+  //      if (user.getSubscriptionStatus() != null) {
+  //
+  //        SubscriptionPlan activePlan = null;
+  //
+  //        // 1. ANGALIA KWANZA: Labda plan imehifadhiwa moja kwa moja kwenye User (Admin approval
+  // /
+  //        // Direct assignment)
+  //        if (user.getSubscriptionPlan() != null) {
+  //          activePlan = user.getSubscriptionPlan();
+  //        } else {
+  //          // 2. KAMA HAKUNA: Ndipo tuangalie kupitia Payment ya mwisho (kama ilivyokuwa mwanzo)
+  //          Payment latestPayment =
+  //              paymentRepository
+  //                  .findFirstByUserIdAndStatusOrderByCreatedAtDesc(
+  //                      user.getId(), SystemPaymentStatus.SUCCESS)
+  //                  .orElse(null);
+  //
+  //          if (latestPayment != null && latestPayment.getPlanId() != null) {
+  //            activePlan =
+  //                subscriptionPlanRepository.findById(latestPayment.getPlanId()).orElse(null);
+  //          }
+  //        }
+  //
+  //        SubscriberResponseDto dto =
+  //            SubscriberResponseDto.builder()
+  //                .userId(user.getId())
+  //                .email(user.getEmail())
+  //                .subscriptionStatus(user.getSubscriptionStatus().name())
+  //                .expiresAt(user.getSubscriptionExpiresAt())
+  //                .planName(
+  //                    activePlan != null ? activePlan.getName().toString() : "Trial / Admin
+  // Assigned")
+  //                .planAmount(activePlan != null ? activePlan.getPrice() : BigDecimal.ZERO)
+  //                .durationInDays(activePlan != null ? activePlan.getDurationInDays() : 0)
+  //                .build();
+  //
+  //        subscribersList.add(dto);
+  //      }
+  //    }
+  //    return subscribersList;
+  //  }
 
   @Override
   public byte[] generateReceiptPdf(String orderId) throws Exception {

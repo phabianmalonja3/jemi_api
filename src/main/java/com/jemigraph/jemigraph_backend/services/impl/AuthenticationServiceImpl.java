@@ -1,10 +1,8 @@
 package com.jemigraph.jemigraph_backend.services.impl;
 
 import com.jemigraph.jemigraph_backend.DTO.*;
-import com.jemigraph.jemigraph_backend.Entities.OtpVerification;
-import com.jemigraph.jemigraph_backend.Entities.User;
-import com.jemigraph.jemigraph_backend.Entities.UserDevice;
-import com.jemigraph.jemigraph_backend.Entities.UserProfile;
+import com.jemigraph.jemigraph_backend.Entities.*;
+import com.jemigraph.jemigraph_backend.enums.SubscriptionPlanType;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.exceptions.PendingVerificationException;
@@ -48,6 +46,9 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   private final OtpRepository otpRepository;
   private final UserDeviceRepository userDeviceRepository;
   private final SessionService sessionService;
+  private final SubscriptionRepository subscriptionRepository;
+  private final PkgRepository pkgRepository;
+  private final SubscriptionPlanRepository subscriptionPlanRepository;
 
   @Override
   @Transactional
@@ -209,18 +210,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new IllegalArgumentException("Invalid role. Must be ADMIN, PHOTOGRAPHER, or CLIENT");
     }
 
-    if (userRole == UserRole.PHOTOGRAPHER) {
-
-      if (userDto.getPhone() == null || userDto.getPhone().isEmpty()) {
-        throw new IllegalArgumentException(
-            "Phone number is required for Photographer registration.");
-      }
-
-      if (userDto.getBio() == null || userDto.getBio().isEmpty()) {
-        throw new IllegalArgumentException("Bio is required for Photographer registration.");
-      }
-    }
-
     boolean verifiedStatus = "CLIENT".equals(userDto.getRole());
     var userBuilder =
         User.builder()
@@ -230,14 +219,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
             .role(userRole)
             .isVerified(verifiedStatus)
             .isBusy(false)
-            .isOnline(false)
-            .subscriptionStatus(SubscriptionStatus.INACTIVE);
-
-    if (userRole == UserRole.PHOTOGRAPHER) {
-      userBuilder
-          .trialEndsAt(LocalDateTime.now().plusDays(30))
-          .subscriptionStatus(SubscriptionStatus.TRIAL);
-    }
+            .isOnline(false);
 
     User createdUser = userBuilder.build();
     User savedUser = userRepository.save(createdUser);
@@ -273,6 +255,24 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
+    }
+
+    if (userRole == UserRole.PHOTOGRAPHER) {
+
+      SubscriptionPlan trialPackage =
+          subscriptionPlanRepository
+              .findByName(SubscriptionPlanType.MONTHLY)
+              .orElseThrow(() -> new RuntimeException("Trial package not configured."));
+      LocalDateTime now = LocalDateTime.now();
+      Subscription subscription =
+          Subscription.builder()
+              .user(savedUser)
+              .subscriptionPackage(trialPackage)
+              .status(SubscriptionStatus.ACTIVE)
+              .startedAt(now)
+              .expiresAt(now.plusDays(30))
+              .build();
+      subscriptionRepository.save(subscription);
     }
     return registrationMapper.toDto(savedUser);
   }

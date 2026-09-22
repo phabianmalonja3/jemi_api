@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -126,10 +127,31 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
+  @ExceptionHandler(DuplicatePackageLevelException.class)
+  public ResponseEntity<ApiErrorResponseDTO> handleDuplicatePackageLevel(
+          DuplicatePackageLevelException ex) {
+    ApiErrorResponseDTO error = new ApiErrorResponseDTO(
+            HttpStatus.CONFLICT.value(),
+            ex.getMessage(),
+            LocalDateTime.now(),
+            null
+    );
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
   @ResponseStatus(HttpStatus.CONFLICT)
   public static class DuplicatePackageNameException extends RuntimeException {
     public DuplicatePackageNameException(String message) {
       super(message);
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleUsernameNotFound(
+        UsernameNotFoundException ex) {
+      ApiErrorResponseDTO error =
+          new ApiErrorResponseDTO(
+              HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now(), null);
+      return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
   }
 }

@@ -1,8 +1,6 @@
 package com.jemigraph.jemigraph_backend.controllers;
 
-import com.jemigraph.jemigraph_backend.DTO.PackageRequestDto;
-import com.jemigraph.jemigraph_backend.DTO.PhotographerProfileDTO;
-import com.jemigraph.jemigraph_backend.DTO.PkgDTO;
+import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.mappers.PhotographyPackageMapper;
 import com.jemigraph.jemigraph_backend.models.LocationUpdateRequest;
 import com.jemigraph.jemigraph_backend.services.LiveStatusService;
@@ -30,6 +28,7 @@ public class PhotographerController {
   private final LiveStatusService liveStatusService;
   private final PhotographerService profileService;
   private final PkgService pkgService;
+
   private PhotographyPackageMapper photographyPackageMapper;
 
   @PostMapping("/online-status")
@@ -58,8 +57,8 @@ public class PhotographerController {
   }
 
   @PostMapping("/packages")
-  public ResponseEntity<PackageRequestDto> createPackage(
-      @RequestBody PkgDTO request, Principal principal) {
+  public ResponseEntity<PhotographerPackageRequestDto> createPackage(
+      @RequestBody PhotographerPackageDTO request, Principal principal) {
     String email = principal.getName();
 
     return ResponseEntity.ok(
@@ -73,8 +72,8 @@ public class PhotographerController {
   }
 
   @GetMapping("/packages")
-  public ResponseEntity<List<PackageRequestDto>> getMyPackages(Principal principal) {
-    List<PackageRequestDto> packages =
+  public ResponseEntity<List<PhotographerPackageRequestDto>> getMyPackages(Principal principal) {
+    List<PhotographerPackageRequestDto> packages =
         pkgService.getMyPackages(principal.getName()).stream()
             .map(pkg -> photographyPackageMapper.toDto(pkg))
             .collect(Collectors.toList());

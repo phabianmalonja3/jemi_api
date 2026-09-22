@@ -908,4 +908,176 @@ public class EmailServiceImpl implements EmailService {
       throw new RuntimeException(e);
     }
   }
+
+  public void sendContactFormReceived(
+      String userEmail, String userName, String subject, String message) {
+
+    try {
+      MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(ADMIN_EMAIL);
+      helper.setReplyTo(userEmail);
+      helper.setSubject("New Contact Form: " + subject);
+
+      String htmlContent =
+          "<html>"
+              + "<body style='margin:0; padding:0; "
+              + "background-color:#f4f6f9; "
+              + "font-family:Arial,sans-serif;'>"
+              + "<div style='max-width:600px; "
+              + "margin:30px auto; "
+              + "background:#ffffff; "
+              + "border-radius:10px; "
+              + "overflow:hidden; "
+              + "box-shadow:0 4px 15px rgba(0,0,0,0.08);'>"
+
+              // Header
+              + "<div style='background:#25632D; "
+              + "padding:25px; "
+              + "text-align:center; "
+              + "color:#ffffff;'>"
+              + "<h1 style='margin:0; "
+              + "font-size:26px;'>"
+              + "JEMIGRAPH"
+              + "</h1>"
+              + "<p style='margin:8px 0 0; "
+              + "font-size:14px;'>"
+              + "New Contact Form Submission"
+              + "</p>"
+              + "</div>"
+
+              // Body
+              + "<div style='padding:30px;'>"
+              + "<h2 style='color:#1f2937; "
+              + "margin-top:0;'>"
+              + "New message from "
+              + userName
+              + "</h2>"
+              + "<p style='font-size:15px; "
+              + "line-height:1.7; "
+              + "color:#4b5563;'>"
+              + "A visitor submitted the contact form on the Jemigraph website. "
+              + "Details are below."
+              + "</p>"
+
+              // Alert box
+              + "<div style='background:#ecfdf5; "
+              + "border:1px solid #a7f3d0; "
+              + "border-radius:8px; "
+              + "padding:20px; "
+              + "margin:25px 0;'>"
+              + "<h3 style='margin-top:0; "
+              + "color:#166534;'>"
+              + "✓ Action Required"
+              + "</h3>"
+              + "<p style='margin:8px 0; "
+              + "color:#166534;'>"
+              + "Please respond to this inquiry within 24 hours."
+              + "</p>"
+              + "</div>"
+
+              // Sender details
+              + "<h3 style='color:#1f2937;'>"
+              + "Sender Details"
+              + "</h3>"
+              + "<table style='width:100%; "
+              + "border-collapse:collapse; "
+              + "font-size:14px;'>"
+              + "<tr>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "color:#6b7280; "
+              + "width:120px;'>"
+              + "Name"
+              + "</td>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "font-weight:bold;'>"
+              + userName
+              + "</td>"
+              + "</tr>"
+              + "<tr>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "color:#6b7280;'>"
+              + "Email"
+              + "</td>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb;'>"
+              + "<a href='mailto:"
+              + userEmail
+              + "' style='color:#25632D; text-decoration:none;'>"
+              + userEmail
+              + "</a>"
+              + "</td>"
+              + "</tr>"
+              + "<tr>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "color:#6b7280;'>"
+              + "Subject"
+              + "</td>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "font-weight:bold;'>"
+              + subject
+              + "</td>"
+              + "</tr>"
+              + "<tr>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "color:#6b7280; "
+              + "vertical-align:top;'>"
+              + "Message"
+              + "</td>"
+              + "<td style='padding:10px 0; "
+              + "border-bottom:1px solid #e5e7eb; "
+              + "line-height:1.6;'>"
+              + message
+              + "</td>"
+              + "</tr>"
+              + "</table>"
+
+              // CTA
+              + "<p style='margin-top:25px; "
+              + "font-size:14px; "
+              + "line-height:1.6; "
+              + "color:#4b5563;'>"
+              + "Reply directly to this email to respond to "
+              + "<strong>"
+              + userName
+              + "</strong>."
+              + "</p>"
+              + "</div>"
+
+              // Footer
+              + "<div style='background:#f8fafc; "
+              + "padding:18px; "
+              + "text-align:center; "
+              + "font-size:12px; "
+              + "color:#94a3b8; "
+              + "border-top:1px solid #e5e7eb;'>"
+              + "&copy; 2026 Jemigraph. All rights reserved."
+              + "</div>"
+              + "</div>"
+              + "</body>"
+              + "</html>";
+
+      helper.setText(htmlContent, true);
+
+      mailSender.send(mimeMessage);
+
+      log.info("Contact form notification sent to admin for submission from {}", userEmail);
+
+    } catch (MessagingException e) {
+
+      log.error(
+          "Failed to send contact form notification for {}: {}", userEmail, e.getMessage(), e);
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

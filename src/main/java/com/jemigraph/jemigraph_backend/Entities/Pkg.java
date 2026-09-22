@@ -2,10 +2,9 @@ package com.jemigraph.jemigraph_backend.Entities;
 
 import com.jemigraph.jemigraph_backend.enums.PackageLevel;
 import jakarta.persistence.*;
-import lombok.Data;
-
 import java.util.List;
 import java.util.UUID;
+import lombok.Data;
 
 @Entity
 @Table(
@@ -31,7 +30,8 @@ public class Pkg {
     @Column(nullable = false, unique = true)
     private String name;
 
-    private String duration;
+    @Column(nullable = false)
+    private Integer duration; // Changed from String to Integer (represents hours)
 
     @Column(nullable = false)
     private Double price;

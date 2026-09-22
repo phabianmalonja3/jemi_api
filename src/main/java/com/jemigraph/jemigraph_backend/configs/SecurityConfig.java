@@ -56,6 +56,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/auth/**")
                     .permitAll() // Login na Register
+                    .requestMatchers("/contact/**")
+                    .permitAll()
                     .requestMatchers("/subscription-plans/**")
                     .permitAll()
                     .requestMatchers("/subscription-plans/activate")

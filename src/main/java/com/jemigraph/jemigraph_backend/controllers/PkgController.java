@@ -1,6 +1,6 @@
 package com.jemigraph.jemigraph_backend.controllers;
 
-import com.jemigraph.jemigraph_backend.DTO.PkgDTO;
+import com.jemigraph.jemigraph_backend.DTO.PhotographerPackageDTO;
 import com.jemigraph.jemigraph_backend.services.impl.PkgService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +17,13 @@ public class PkgController {
   private final PkgService pkgService;
 
   @GetMapping
-  public List<PkgDTO> getAllPackages() {
+  public List<PhotographerPackageDTO> getAllPackages() {
     return pkgService.getAllPackages();
   }
 
   @PostMapping
-  public ResponseEntity<PkgDTO> createPackage(@RequestBody PkgDTO dto) {
+  public ResponseEntity<PhotographerPackageDTO> createPackage(
+      @RequestBody PhotographerPackageDTO dto) {
 
     return ResponseEntity.ok(pkgService.createPackage(dto));
   }
@@ -35,10 +36,10 @@ public class PkgController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<PkgDTO> updatePackage(
-      @PathVariable UUID id, @Valid @RequestBody PkgDTO dto) {
+  public ResponseEntity<PhotographerPackageDTO> updatePackage(
+      @PathVariable UUID id, @Valid @RequestBody PhotographerPackageDTO dto) {
 
-    PkgDTO updated = pkgService.updatePackage(id, dto);
+    PhotographerPackageDTO updated = pkgService.updatePackage(id, dto);
     return ResponseEntity.ok(updated);
   }
 }

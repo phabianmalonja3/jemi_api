@@ -1,13 +1,12 @@
 package com.jemigraph.jemigraph_backend.DTO;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
-import java.time.LocalDateTime;
-import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -23,6 +22,7 @@ public class BookingDTO {
     private String packageName;
     private String type;
     private LocalDateTime pickupTime;
+    private LocalDateTime endTime;
     private String addressName;
     private Double lat;
     private Double lng;

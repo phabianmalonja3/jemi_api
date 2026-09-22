@@ -2,142 +2,268 @@ package com.jemigraph.jemigraph_backend.services.impl;
 
 import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
+import com.jemigraph.jemigraph_backend.Entities.Subscription;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.Entities.Wallet;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.enums.WalletType;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
 import com.jemigraph.jemigraph_backend.mappers.TransactionMapper;
+import com.jemigraph.jemigraph_backend.repositories.SubscriptionRepository;
 import com.jemigraph.jemigraph_backend.repositories.TransactionRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.repositories.WalletRepository;
 import com.jemigraph.jemigraph_backend.services.AdminService;
 import com.jemigraph.jemigraph_backend.services.SmsService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AdminServiceImpl implements AdminService {
 
-    private final UserRepository userRepository;
-    private final TransactionRepository transactionRepository;
-    private final TransactionMapper transactionMapper;
-    private final WalletRepository walletRepository; 
-    private final ApplicationEventPublisher eventPublisher;
-    private final SmsService smsService;
+  private final UserRepository userRepository;
+  private final TransactionRepository transactionRepository;
+  private final TransactionMapper transactionMapper;
+  private final WalletRepository walletRepository;
+  private final SubscriptionRepository subscriptionRepository;
+  private final ApplicationEventPublisher eventPublisher;
+  private final SmsService smsService;
 
-    @Override
-    public Page<TransactionAdminDTO> getAllTransactionsForAdmin(Pageable pageable) {
-        return transactionRepository.findAllTransactions(pageable)
-                .map(transactionMapper::toTransactionAdminDTO);
+  // ============================================================
+  // ALL TRANSACTIONS
+  // ============================================================
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<TransactionAdminDTO> getAllTransactionsForAdmin(Pageable pageable) {
+
+    return transactionRepository
+        .findAllTransactions(pageable)
+        .map(transactionMapper::toTransactionAdminDTO);
+  }
+
+  // ============================================================
+  // SUSPEND / ENABLE ACCOUNT
+  // ============================================================
+
+  @Override
+  public User accountSuspension(UUID uuid) {
+
+    User user =
+        userRepository.findById(uuid).orElseThrow(() -> new RuntimeException("User Not Found"));
+
+    user.setEnabled(!user.isEnabled());
+
+    return userRepository.save(user);
+  }
+
+  // ============================================================
+  // SYSTEM BALANCE
+  // ============================================================
+
+  @Override
+  @Transactional(readOnly = true)
+  public double getSystemBalance() {
+
+    List<Wallet> systemWallets = walletRepository.findByType(WalletType.SYSTEM);
+
+    if (systemWallets.isEmpty()) {
+      return 0.0;
     }
 
-    @Override
-    public User accountSuspension(UUID uuid) {
-        User user = userRepository.findById(uuid).orElseThrow(() -> new RuntimeException("User Not Found"));
-        user.setEnabled(!user.isEnabled());
-        return userRepository.save(user);
+    /*
+     * TODO:
+     * Calculate the actual system wallet balance.
+     *
+     * This depends on the fields available in Wallet.
+     */
+
+    return 0.0;
+  }
+
+  // ============================================================
+  // FILTER USERS
+  // ============================================================
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<UserDTO> findFilteredUsers(String name, UserRole role, Pageable pageable) {
+
+    Page<User> userPage;
+
+    if (name != null && !name.isBlank() && role != null) {
+
+      userPage = userRepository.findByNameContainingIgnoreCaseAndRole(name, role, pageable);
+
+    } else if (role != null) {
+
+      userPage = userRepository.findByRole(role, pageable);
+
+    } else if (name != null && !name.isBlank()) {
+
+      userPage = userRepository.findByNameContainingIgnoreCase(name, pageable);
+
+    } else {
+
+      userPage = userRepository.findAll(pageable);
     }
 
-    @Override
-    public double getSystemBalance() {
+    return userPage.map(this::convertToDTO);
+  }
 
-        List<Wallet> systemWallets = walletRepository.findByType(WalletType.SYSTEM);
-        if (systemWallets.isEmpty()) {
-            return 0;
-        }
+  // ============================================================
+  // USER -> DTO
+  // ============================================================
 
-        return 0.0;
+  private UserDTO convertToDTO(User user) {
+
+    UserDTO dto = new UserDTO();
+
+    dto.setId(user.getId());
+    dto.setName(user.getName());
+    dto.setEmail(user.getEmail());
+
+    dto.setRole(user.getRole() != null ? user.getRole().name() : null);
+
+    dto.setIsVerified(user.isVerified());
+    dto.setFcmToken(user.getFcmToken());
+
+    /*
+     * ========================================================
+     * SUBSCRIPTION
+     * ========================================================
+     *
+     * Subscription is now the source of truth.
+     */
+
+    Subscription subscription = subscriptionRepository.findByUserId(user.getId()).orElse(null);
+
+    if (subscription != null) {
+
+      LocalDateTime now = LocalDateTime.now();
+
+      boolean active =
+          subscription.getStatus()
+                  == com.jemigraph.jemigraph_backend.enums.SubscriptionStatus.ACTIVE
+              && subscription.getExpiresAt() != null
+              && subscription.getExpiresAt().isAfter(now);
+
+      dto.setSubscriptionStatus(
+          active
+              ? com.jemigraph.jemigraph_backend.enums.SubscriptionStatus.ACTIVE
+              : subscription.getStatus());
+
+      dto.setSubscriptionExpiresAt(subscription.getExpiresAt());
+
+      /*
+       * If UserDTO still has trialEndsAt,
+       * use subscription expiry for now.
+       *
+       * Later we can remove trialEndsAt completely
+       * if it is no longer required by the admin UI.
+       */
+      dto.setTrialEndsAt(subscription.getExpiresAt());
+
+    } else {
+
+      dto.setSubscriptionStatus(null);
+      dto.setSubscriptionExpiresAt(null);
+      dto.setTrialEndsAt(null);
     }
 
-    @Override
-    public Page<UserDTO> findFilteredUsers(String name, UserRole role, Pageable pageable) {
-        Page<User> userPage;
+    // ========================================================
+    // USER PROFILE
+    // ========================================================
 
-        if (name != null && !name.isEmpty() && role != null) {
-            userPage = userRepository.findByNameContainingIgnoreCaseAndRole(name, role, pageable);
-        } else if (role != null) {
-            userPage = userRepository.findByRole(role, pageable);
-        } else if (name != null && !name.isEmpty()) {
-            userPage = userRepository.findByNameContainingIgnoreCase(name, pageable);
-        } else {
-            userPage = userRepository.findAll(pageable);
-        }
+    if (user.getUserProfile() != null) {
 
+      dto.setPhone(user.getUserProfile().getPhone());
 
-        return userPage.map(this::convertToDTO);
+      dto.setBio(user.getUserProfile().getBio());
+
+      dto.setDisplayName(user.getUserProfile().getDisplayName());
     }
 
+    /*
+     * Password haisafirishwi kwenye response.
+     */
 
-    private UserDTO convertToDTO(User user) {
-        UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
-        dto.setName(user.getName());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole() != null ? user.getRole().name() : null);
-        dto.setIsVerified(user.isVerified());
-        dto.setTrialEndsAt(user.getTrialEndsAt());
-        dto.setSubscriptionStatus(user.getSubscriptionStatus());
-        dto.setSubscriptionExpiresAt(user.getSubscriptionExpiresAt());
-        dto.setFcmToken(user.getFcmToken());
+    return dto;
+  }
 
-        if (user.getUserProfile() != null) {
-            dto.setPhone(user.getUserProfile().getPhone());
-            dto.setBio(user.getUserProfile().getBio());
-            dto.setDisplayName(user.getUserProfile().getDisplayName());
-        }
+  // ============================================================
+  // RECENT TRANSACTIONS
+  // ============================================================
 
-        // Password haisafirishwi kwenye response kwa usalama wa mfumo
-        return dto;
-    }
-    @Override
-    public List<TransactionAdminDTO> getRecentTransactions(Pageable pageable) {
-        return transactionRepository.findAll(pageable)
-                .map(transactionMapper::toTransactionAdminDTO)
-                .getContent();
-    }
+  @Override
+  @Transactional(readOnly = true)
+  public List<TransactionAdminDTO> getRecentTransactions(Pageable pageable) {
 
-    @Override
-    public User verifyPhotographer(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    return transactionRepository
+        .findAll(pageable)
+        .map(transactionMapper::toTransactionAdminDTO)
+        .getContent();
+  }
 
-        user.setVerified(true);
-        User verifiedUser = userRepository.save(user);
-        eventPublisher.publishEvent(new PhotographerVerifiedEvent(verifiedUser));
+  // ============================================================
+  // VERIFY PHOTOGRAPHER
+  // ============================================================
 
-        return verifiedUser;
-    }
+  @Override
+  public User verifyPhotographer(UUID userId) {
 
-    @Override
-    public List<UserDTO> getUnverifiedPhotographers() {
-        return userRepository.findByRoleAndIsVerified(UserRole.PHOTOGRAPHER, false)
-                .stream()
-                .map(user -> UserDTO.builder()
-                        .id(user.getId())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        // Map other necessary fields
-                        .build())
-                .toList();
-    }
-    @Override
-    public void removeAccount(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("user is not found !"));
+    User user =
+        userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-        userRepository.delete(user);
-        return;
+    user.setVerified(true);
 
+    User verifiedUser = userRepository.save(user);
 
-    }
+    eventPublisher.publishEvent(new PhotographerVerifiedEvent(verifiedUser));
 
+    return verifiedUser;
+  }
+
+  // ============================================================
+  // UNVERIFIED PHOTOGRAPHERS
+  // ============================================================
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<UserDTO> getUnverifiedPhotographers() {
+
+    return userRepository.findByRoleAndIsVerified(UserRole.PHOTOGRAPHER, false).stream()
+        .map(
+            user ->
+                UserDTO.builder()
+                    .id(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .build())
+        .toList();
+  }
+
+  // ============================================================
+  // DELETE ACCOUNT
+  // ============================================================
+
+  @Override
+  public void removeAccount(UUID userId) {
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new RuntimeException("user is not found !"));
+
+    userRepository.delete(user);
+  }
 }

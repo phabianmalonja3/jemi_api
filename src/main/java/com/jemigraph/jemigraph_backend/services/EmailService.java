@@ -25,6 +25,8 @@ public interface EmailService {
 
   void sendPasswordResetEmail(String toEmail, String resetLink);
 
+  void sendContactFormReceived(String toEmail, String userName, String subject, String message);
+
   void sendSubscriptionActivated(
       String toEmail,
       String userName,
