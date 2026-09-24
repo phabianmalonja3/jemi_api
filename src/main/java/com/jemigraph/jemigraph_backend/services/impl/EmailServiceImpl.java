@@ -1080,4 +1080,122 @@ public class EmailServiceImpl implements EmailService {
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  @Async
+  public void sendPhotographerApprovalRequest(
+      String userName, String userEmail, String phone, UUID userId) {
+
+    String subject = "New Photographer Registration";
+
+    String htmlContent =
+        """
+					<div style="font-family: Arial, sans-serif;
+								max-width: 600px;
+								margin: auto;
+								padding: 20px;
+								background-color: #f8f9fa;">
+
+						<div style="background-color: #25632D;
+									padding: 20px;
+									text-align: center;">
+							<h2 style="color: white; margin: 0;">
+								Jemigraph
+							</h2>
+						</div>
+
+						<div style="background-color: white;
+									padding: 25px;">
+
+							<h3 style="color: #333;">
+								New Photographer Registration
+							</h3>
+
+							<p style="color: #555;">
+								A new photographer has successfully registered
+								on Jemigraph.
+							</p>
+
+							<hr style="border: none;
+									   border-top: 1px solid #eee;">
+
+							<h4 style="color: #333;">
+								Photographer Details
+							</h4>
+
+							<p>
+								<strong>Name:</strong> %s
+							</p>
+
+							<p>
+								<strong>Email:</strong> %s
+							</p>
+
+							<p>
+								<strong>Phone:</strong> %s
+							</p>
+
+							<p>
+								<strong>User ID:</strong> %s
+							</p>
+
+							<hr style="border: none;
+									   border-top: 1px solid #eee;">
+
+							<div style="background-color: #e8f5e9;
+										padding: 15px;
+										border-radius: 5px;">
+
+								<strong>Registration Received</strong>
+
+								<p style="margin-bottom: 0;">
+									The photographer registration has been received
+									successfully. Please review the account from
+									the Jemigraph Admin Dashboard when necessary.
+								</p>
+
+							</div>
+
+							<p style="margin-top: 25px; color: #666;">
+								This is an automated notification from Jemigraph.
+							</p>
+
+						</div>
+
+						<div style="text-align: center;
+									padding: 15px;
+									color: #999;
+									font-size: 12px;">
+							© Jemigraph
+						</div>
+
+					</div>
+					"""
+            .formatted(userName, userEmail, phone, userId);
+
+    sendHtmlEmail(ADMIN_EMAIL, subject, htmlContent);
+  }
+
+  private void sendHtmlEmail(String to, String subject, String htmlContent) {
+
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(to);
+      helper.setSubject(subject);
+      helper.setText(htmlContent, true);
+
+      mailSender.send(message);
+
+    } catch (MessagingException e) {
+      log.error("Failed to send email to {}", to, e);
+      throw new RuntimeException("Failed to send email", e);
+    } catch (UnsupportedEncodingException e) {
+      log.error("Failed to set email sender name", e);
+      throw new RuntimeException("Failed to send email", e);
+    }
+  }
 }

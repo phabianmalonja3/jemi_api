@@ -5,17 +5,13 @@ import com.jemigraph.jemigraph_backend.Entities.*;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionPlanType;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
-import com.jemigraph.jemigraph_backend.exceptions.PendingVerificationException;
 import com.jemigraph.jemigraph_backend.exceptions.SuperAdminException;
 import com.jemigraph.jemigraph_backend.exceptions.UserAlreadyExistsException;
 import com.jemigraph.jemigraph_backend.mappers.RegistrationMapper;
 import com.jemigraph.jemigraph_backend.mappers.UserMapper;
 import com.jemigraph.jemigraph_backend.repositories.*;
 import com.jemigraph.jemigraph_backend.requests.AuthenticationRequest;
-import com.jemigraph.jemigraph_backend.services.AuthentificationService;
-import com.jemigraph.jemigraph_backend.services.JwtService;
-import com.jemigraph.jemigraph_backend.services.LoginAttemptService;
-import com.jemigraph.jemigraph_backend.services.SessionService;
+import com.jemigraph.jemigraph_backend.services.*;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -42,6 +38,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final EmailServiceImpl emailService;
+  private final EmailService emailServiceAdmin;
   private final RegistrationMapper registrationMapper;
   private final OtpRepository otpRepository;
   private final UserDeviceRepository userDeviceRepository;
@@ -74,9 +71,9 @@ public class AuthenticationServiceImpl implements AuthentificationService {
             .findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-    if (user.getRole() == UserRole.PHOTOGRAPHER && !user.isVerified()) {
-      throw new PendingVerificationException("ACCOUNT_PENDING_VERIFICATION");
-    }
+//    if (user.getRole() == UserRole.PHOTOGRAPHER && !user.isVerified()) {
+//      throw new PendingVerificationException("ACCOUNT_PENDING_VERIFICATION");
+//    }
 
     String ipAddress = "Unknown IP";
     String userAgent =
@@ -210,14 +207,14 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new IllegalArgumentException("Invalid role. Must be ADMIN, PHOTOGRAPHER, or CLIENT");
     }
 
-    boolean verifiedStatus = "CLIENT".equals(userDto.getRole());
+
     var userBuilder =
         User.builder()
             .name(userDto.getName())
             .email(userDto.getEmail())
             .password(passwordEncoder.encode(userDto.getPassword()))
             .role(userRole)
-            .isVerified(verifiedStatus)
+            .isVerified(true)
             .isBusy(false)
             .isOnline(false);
 
@@ -237,6 +234,13 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
+
+		emailServiceAdmin.sendPhotographerApprovalRequest(
+				userDto.getName(),
+				userDto.getEmail(),
+				userDto.getPhone(),
+				savedUser.getId()
+		);
 
     } else if (userRole == UserRole.CLIENT
         && userDto.getPhone() != null
