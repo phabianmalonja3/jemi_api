@@ -328,6 +328,139 @@ public class EmailServiceImpl implements EmailService {
 
   @Async
   @Override
+  public void sendAccountActivation(User user) {
+
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(user.getEmail());
+      helper.setSubject("Account Activated - Welcome to Jemigraph!");
+
+      String htmlContent =
+          """
+					<html>
+					<body style="font-family: Arial, sans-serif;
+								 line-height: 1.6;
+								 color: #333;
+								 background-color: #f8f9fa;
+								 margin: 0;
+								 padding: 20px;">
+
+					  <div style="max-width: 600px;
+								  margin: auto;
+								  background-color: #ffffff;
+								  border-radius: 10px;
+								  overflow: hidden;
+								  border: 1px solid #e5e5e5;">
+
+						<div style="background-color: #25632D;
+									padding: 25px;
+									text-align: center;">
+
+						  <h2 style="color: #ffffff; margin: 0;">
+							Welcome to Jemigraph!
+						  </h2>
+
+						</div>
+
+						<div style="padding: 30px;">
+
+						  <h3 style="color: #25632D;">
+							Hello %s,
+						  </h3>
+
+						  <p>
+							Congratulations! Your Jemigraph account has been
+							successfully activated.
+						  </p>
+
+						  <p>
+							You can now log in to your account, complete your profile,
+							manage your photography services, and start receiving
+							booking requests from clients.
+						  </p>
+
+						  <div style="background-color: #e8f5e9;
+									  border-radius: 8px;
+									  padding: 20px;
+									  margin: 25px 0;">
+
+							<h3 style="color: #25632D; margin-top: 0;">
+							  🎉 Your Free Trial
+							</h3>
+
+							<p>
+							  As a welcome gift, we have activated a
+							  <strong>30-day free trial</strong> for your account.
+							</p>
+
+							<p style="margin-bottom: 0;">
+							  You can enjoy the available photographer features
+							  during your free trial without making a subscription
+							  payment.
+							</p>
+
+						  </div>
+
+						  <p>
+							Your free trial starts from the date your account is
+							activated and remains active for <strong>30 days</strong>.
+						  </p>
+
+						  <p>
+							We are excited to have you as part of Jemigraph and
+							look forward to helping you connect with more clients.
+						  </p>
+
+						  <p>
+							If you have any questions or need assistance, feel free
+							to contact our support team.
+						  </p>
+
+						  <p style="margin-top: 30px;">
+							Best regards,<br>
+							<strong>The Jemigraph Team</strong>
+						  </p>
+
+						</div>
+
+						<div style="text-align: center;
+									padding: 15px;
+									background-color: #f8f9fa;
+									color: #999;
+									font-size: 12px;">
+
+						  © Jemigraph. All rights reserved.
+
+						</div>
+
+					  </div>
+
+					</body>
+					</html>
+					"""
+              .formatted(user.getName());
+
+      helper.setText(htmlContent, true);
+
+      mailSender.send(message);
+
+      log.info("Account activation email successfully sent to: {}", user.getEmail());
+
+    } catch (MessagingException | UnsupportedEncodingException e) {
+
+      log.error(
+          "Failed to send account activation email to {}: {}", user.getEmail(), e.getMessage(), e);
+
+      throw new RuntimeException("Failed to send account activation email", e);
+    }
+  }
+
+  @Async
+  @Override
   public void sendLoginAlertEmail(
       String recipientEmail,
       String userName,

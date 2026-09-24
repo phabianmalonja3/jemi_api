@@ -44,7 +44,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   private final UserDeviceRepository userDeviceRepository;
   private final SessionService sessionService;
   private final SubscriptionRepository subscriptionRepository;
-  private final PkgRepository pkgRepository;
   private final SubscriptionPlanRepository subscriptionPlanRepository;
 
   @Override
@@ -70,10 +69,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
         userRepository
             .findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-//    if (user.getRole() == UserRole.PHOTOGRAPHER && !user.isVerified()) {
-//      throw new PendingVerificationException("ACCOUNT_PENDING_VERIFICATION");
-//    }
 
     String ipAddress = "Unknown IP";
     String userAgent =
@@ -207,7 +202,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       throw new IllegalArgumentException("Invalid role. Must be ADMIN, PHOTOGRAPHER, or CLIENT");
     }
 
-
     var userBuilder =
         User.builder()
             .name(userDto.getName())
@@ -235,12 +229,8 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
 
-		emailServiceAdmin.sendPhotographerApprovalRequest(
-				userDto.getName(),
-				userDto.getEmail(),
-				userDto.getPhone(),
-				savedUser.getId()
-		);
+      emailServiceAdmin.sendPhotographerApprovalRequest(
+          userDto.getName(), userDto.getEmail(), userDto.getPhone(), savedUser.getId());
 
     } else if (userRole == UserRole.CLIENT
         && userDto.getPhone() != null
@@ -277,6 +267,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
               .expiresAt(now.plusDays(30))
               .build();
       subscriptionRepository.save(subscription);
+      emailService.sendAccountActivation(savedUser);
     }
     return registrationMapper.toDto(savedUser);
   }
