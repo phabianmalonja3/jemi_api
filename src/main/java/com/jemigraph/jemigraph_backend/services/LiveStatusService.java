@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
+import com.jemigraph.jemigraph_backend.DTO.OnlinePhotographerDto;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.exceptions.NotPhotographerException;
 import com.jemigraph.jemigraph_backend.models.LocationUpdateRequest;
@@ -43,6 +44,48 @@ public class LiveStatusService {
       distanceDisplay = roundedKm + "km";
     }
     return distanceDisplay;
+  }
+
+  public List<OnlinePhotographerDto> getOnlinePhotographers() {
+
+    String key = "photographers:online";
+
+    Set<Object> photographers = redisTemplate.opsForZSet().range(key, 0, -1);
+
+    if (photographers == null || photographers.isEmpty()) {
+      return List.of();
+    }
+
+    return photographers.stream()
+        .map(Object::toString)
+        .map(UUID::fromString)
+        .map(
+            userId -> {
+              User user = userRepository.findById(userId).orElse(null);
+
+              if (user == null) {
+                return null;
+              }
+
+              List<Point> positions = redisTemplate.opsForGeo().position(key, userId.toString());
+
+              if (positions == null || positions.isEmpty()) {
+                return null;
+              }
+
+              Point point = positions.get(0);
+
+              return OnlinePhotographerDto.builder()
+                  .id(user.getId())
+                  .name(user.getName())
+                  .email(user.getEmail())
+                  .phone(user.getUserProfile().getPhone())
+                  .latitude(point.getY())
+                  .longitude(point.getX())
+                  .build();
+            })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   @Transactional

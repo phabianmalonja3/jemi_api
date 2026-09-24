@@ -107,6 +107,12 @@ public class PhotographerController {
     return ResponseEntity.ok(liveStatusService.getNearbyPhotographers(lat, lng));
   }
 
+  @GetMapping("/online")
+  public ResponseEntity<?> getOnlinePhotographers() {
+
+    return ResponseEntity.ok(liveStatusService.getOnlinePhotographers());
+  }
+
   @GetMapping("/top-rated")
   public ResponseEntity<Page<PhotographerProfileDTO>> getTopRatedPhotographers(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
