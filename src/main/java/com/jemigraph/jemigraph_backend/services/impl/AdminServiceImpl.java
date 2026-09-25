@@ -38,7 +38,7 @@ public class AdminServiceImpl implements AdminService {
   private final SubscriptionRepository subscriptionRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final SmsService smsService;
-  private RedisTemplate<String, String> redisTemplate;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Override
   @Transactional(readOnly = true)
