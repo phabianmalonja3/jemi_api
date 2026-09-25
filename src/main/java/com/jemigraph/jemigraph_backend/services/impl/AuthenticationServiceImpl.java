@@ -51,6 +51,12 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   public AuthResponse authenticate(AuthenticationRequest request, String deviceName) {
     String email = request.email();
 
+    if (loginAttemptService.isAdminBlocked(email)) {
+      throw new LockedException(
+          "Your account has been suspended by the administrator. Please contact support.");
+    }
+
+    // 2. Check if the account is locked due to too many failed login attempts (15 mins)
     if (loginAttemptService.isBlocked(email)) {
       throw new LockedException("Too many login attempts. Account locked for 15 minutes.");
     }

@@ -6,9 +6,7 @@ import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
-import com.jemigraph.jemigraph_backend.repositories.TransactionRepository;
-import com.jemigraph.jemigraph_backend.repositories.WalletRepository;
-// import com.jemigraph.jemigraph_backend.services.AdminService;
+
 import com.jemigraph.jemigraph_backend.services.AdminService;
 import com.jemigraph.jemigraph_backend.services.BookingService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
@@ -30,8 +28,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SystemAdminController {
   private final AdminService adminService;
-  private final WalletRepository walletRepository;
-  private final TransactionRepository transactionRepository;
   private final BookingService bookingService;
   private final PaymentSystemService paymentSystemService;
   private final SessionService sessionService;
@@ -140,6 +136,30 @@ public class SystemAdminController {
   public ResponseEntity<Void> clearUserSession(@PathVariable UUID userId) {
     sessionService.clearUserSession(userId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/{uuid}/suspend")
+  public ResponseEntity<?> suspendOrUnsuspendUser(@PathVariable UUID uuid) {
+    try {
+
+      User updatedUser = adminService.accountSuspension(uuid);
+      String message =
+          updatedUser.isAccountNonLocked()
+              ? "Account has been unblocked successfully."
+              : "Account has been suspended successfully.";
+
+      return ResponseEntity.ok(
+          Map.of(
+              "success",
+              true,
+              "message",
+              message,
+              "isAccountNonLocked",
+              updatedUser.isAccountNonLocked()));
+
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+    }
   }
 
   /** Clear a session using email or username identifier. */

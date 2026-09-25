@@ -24,120 +24,134 @@ import org.springframework.security.core.userdetails.UserDetails;
 @AllArgsConstructor
 public class User implements UserDetails {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "UUID", updatable = false, nullable = false)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(columnDefinition = "UUID", updatable = false, nullable = false)
+  private UUID id;
 
-    private String name;
+  private String name;
 
-    private BigDecimal currentDebt = BigDecimal.ZERO;
-    private LocalDateTime debtStartDate;
-    @Column(name = "account_locked_due_to_debt", nullable = false, columnDefinition = "boolean default false")
-    private boolean accountLockedDueToDebt = false;
-    @Column(unique = true, nullable = false)
-    private String email;
+  private BigDecimal currentDebt = BigDecimal.ZERO;
+  private LocalDateTime debtStartDate;
 
-    @Column(nullable = false)
-    private String password;
+  @Column(
+      name = "account_locked_due_to_debt",
+      nullable = false,
+      columnDefinition = "boolean default false")
+  private boolean accountLockedDueToDebt = false;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
+  @Column(unique = true, nullable = false)
+  private String email;
 
-    private boolean is2faEnabled = false;
+  @Column(nullable = false)
+  private String password;
 
-    @Column(length = 64)
-    private String tfaSecret;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
+  private UserRole role;
 
-    private String resetToken;
-    private LocalDateTime resetTokenExpiry;
-    @Builder.Default
-    @Column(name = "enabled")
-    private boolean enabled = true;
+  private boolean is2faEnabled = false;
 
-    @Builder.Default
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+  @Column(length = 64)
+  private String tfaSecret;
 
-    @Column(name = "fcm_token")
-    private String fcmToken;
+  private String resetToken;
+  private LocalDateTime resetTokenExpiry;
 
-    private Double averageRating = 0.0;
-    private Long totalReviews = 0L;
+  @Builder.Default
+  @Column(name = "enabled")
+  private boolean enabled = true;
 
-    @Column(name = "device_type")
-    private String deviceType;
+  @Builder.Default
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
+  @Column(name = "fcm_token")
+  private String fcmToken;
 
-    @Builder.Default
-    private Boolean isOnline = false;
+  private Double averageRating = 0.0;
+  private Long totalReviews = 0L;
 
-    @Builder.Default
-    private Boolean isBusy = false;
+  @Column(name = "device_type")
+  private String deviceType;
 
-    @Column(name = "is_verified")
-    private boolean isVerified;
+  @Column(name = "profile_image_url")
+  private String profileImageUrl;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Location location;
+  @Builder.Default private Boolean isOnline = false;
 
-    @Builder.Default
-    @Column(nullable = false, columnDefinition = "bigint default 1")
-    private Long tokenVersion = 0L;
+  @Builder.Default private Boolean isBusy = false;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JsonIgnoreProperties("user")
-    private UserProfile userProfile;
+  //  @Builder.Default
+  @Column(name = "account_non_locked", nullable = false)
+  private boolean accountNonLocked = true;
 
+  @Column(name = "is_verified")
+  private boolean isVerified;
 
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Location location;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_plan_id")
-    private SubscriptionPlan subscriptionPlan;
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Pkg> packages;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
-    private List<Gallery> gallery = new ArrayList<>();
+  @Builder.Default
+  @Column(nullable = false, columnDefinition = "bigint default 1")
+  private Long tokenVersion = 0L;
 
-    public void setUserProfile(UserProfile userProfile) {
-        if (userProfile == null) {
-            if (this.userProfile != null) {
-                this.userProfile.setUser(null);
-            }
-        } else {
-            userProfile.setUser(this);
-        }
-        this.userProfile = userProfile;
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  @JsonIgnoreProperties("user")
+  private UserProfile userProfile;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "subscription_plan_id")
+  private SubscriptionPlan subscriptionPlan;
+
+  @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Pkg> packages;
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
+  private List<Gallery> gallery = new ArrayList<>();
+
+  public void setUserProfile(UserProfile userProfile) {
+    if (userProfile == null) {
+      if (this.userProfile != null) {
+        this.userProfile.setUser(null);
+      }
+    } else {
+      userProfile.setUser(this);
     }
+    this.userProfile = userProfile;
+  }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-    }
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+  }
 
-    @Override
-    public String getUsername() {
-        return email;
-    }
+  @Override
+  public String getUsername() {
+    return email;
+  }
 
-    @Override
-    public boolean isAccountNonExpired() { return true; }
+  @Override
+  public boolean isAccountNonExpired() {
+    return true;
+  }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return !accountLockedDueToDebt;
-    }
+  @Override
+  public boolean isAccountNonLocked() {
+    return this.accountNonLocked;
+  }
 
-    @Override
-    public boolean isCredentialsNonExpired() { return true; }
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return true;
+  }
 
-    @Override
-    public boolean isEnabled() { return enabled; }
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
 }

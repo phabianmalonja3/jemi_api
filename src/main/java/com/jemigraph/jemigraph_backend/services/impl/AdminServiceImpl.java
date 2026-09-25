@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,10 +38,7 @@ public class AdminServiceImpl implements AdminService {
   private final SubscriptionRepository subscriptionRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final SmsService smsService;
-
-  // ============================================================
-  // ALL TRANSACTIONS
-  // ============================================================
+  private RedisTemplate<String, String> redisTemplate;
 
   @Override
   @Transactional(readOnly = true)
@@ -51,24 +49,28 @@ public class AdminServiceImpl implements AdminService {
         .map(transactionMapper::toTransactionAdminDTO);
   }
 
-  // ============================================================
-  // SUSPEND / ENABLE ACCOUNT
-  // ============================================================
-
   @Override
   public User accountSuspension(UUID uuid) {
-
     User user =
         userRepository.findById(uuid).orElseThrow(() -> new RuntimeException("User Not Found"));
+    boolean newLockStatus = !user.isAccountNonLocked();
+    user.setAccountNonLocked(newLockStatus);
 
-    user.setEnabled(!user.isEnabled());
+    User savedUser = userRepository.save(user);
 
-    return userRepository.save(user);
+    String username = savedUser.getEmail();
+    String lockKey = "account:blocked:" + username;
+
+    if (!newLockStatus) {
+
+      redisTemplate.opsForValue().set(lockKey, "ADMIN_LOCKED");
+    } else {
+      redisTemplate.delete(lockKey);
+      redisTemplate.delete("login:attempts:" + username);
+    }
+
+    return savedUser;
   }
-
-  // ============================================================
-  // SYSTEM BALANCE
-  // ============================================================
 
   @Override
   @Transactional(readOnly = true)
