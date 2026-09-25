@@ -34,12 +34,6 @@ public class User implements UserDetails {
   private BigDecimal currentDebt = BigDecimal.ZERO;
   private LocalDateTime debtStartDate;
 
-  @Column(
-      name = "account_locked_due_to_debt",
-      nullable = false,
-      columnDefinition = "boolean default false")
-  private boolean accountLockedDueToDebt = false;
-
   @Column(unique = true, nullable = false)
   private String email;
 
@@ -83,7 +77,7 @@ public class User implements UserDetails {
 
   @Builder.Default private Boolean isBusy = false;
 
-  //  @Builder.Default
+  @Builder.Default
   @Column(name = "account_non_locked", nullable = false)
   private boolean accountNonLocked = true;
 

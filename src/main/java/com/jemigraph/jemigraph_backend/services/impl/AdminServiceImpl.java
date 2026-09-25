@@ -122,14 +122,8 @@ public class AdminServiceImpl implements AdminService {
     return userPage.map(this::convertToDTO);
   }
 
-  // ============================================================
-  // USER -> DTO
-  // ============================================================
-
   private UserDTO convertToDTO(User user) {
-
     UserDTO dto = new UserDTO();
-
     dto.setId(user.getId());
     dto.setName(user.getName());
     dto.setEmail(user.getEmail());
@@ -138,15 +132,7 @@ public class AdminServiceImpl implements AdminService {
 
     dto.setIsVerified(user.isVerified());
     dto.setFcmToken(user.getFcmToken());
-
-    /*
-     * ========================================================
-     * SUBSCRIPTION
-     * ========================================================
-     *
-     * Subscription is now the source of truth.
-     */
-
+    dto.setBlocked(!user.isAccountNonLocked());
     Subscription subscription = subscriptionRepository.findByUserId(user.getId()).orElse(null);
 
     if (subscription != null) {
@@ -166,13 +152,6 @@ public class AdminServiceImpl implements AdminService {
 
       dto.setSubscriptionExpiresAt(subscription.getExpiresAt());
 
-      /*
-       * If UserDTO still has trialEndsAt,
-       * use subscription expiry for now.
-       *
-       * Later we can remove trialEndsAt completely
-       * if it is no longer required by the admin UI.
-       */
       dto.setTrialEndsAt(subscription.getExpiresAt());
 
     } else {
@@ -181,11 +160,6 @@ public class AdminServiceImpl implements AdminService {
       dto.setSubscriptionExpiresAt(null);
       dto.setTrialEndsAt(null);
     }
-
-    // ========================================================
-    // USER PROFILE
-    // ========================================================
-
     if (user.getUserProfile() != null) {
 
       dto.setPhone(user.getUserProfile().getPhone());
@@ -195,16 +169,8 @@ public class AdminServiceImpl implements AdminService {
       dto.setDisplayName(user.getUserProfile().getDisplayName());
     }
 
-    /*
-     * Password haisafirishwi kwenye response.
-     */
-
     return dto;
   }
-
-  // ============================================================
-  // RECENT TRANSACTIONS
-  // ============================================================
 
   @Override
   @Transactional(readOnly = true)

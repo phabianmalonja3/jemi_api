@@ -1,18 +1,17 @@
 package com.jemigraph.jemigraph_backend.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -45,25 +44,19 @@ public class UserDTO {
     @Size(max = 20, message = "Phone number must be at most 20 characters")
     @Pattern(regexp = "^[0-9+\\-() ]*$", message = "Phone number contains invalid characters")
     private String phone;               // Optional - UserProfile.phone
-
     @Size(max = 255, message = "Location must be at most 255 characters")
-//    private String location;            // Optional - UserProfile.location
 
     @Size(max = 5000, message = "Bio must be at most 5000 characters")
     private String bio;                 // Optional - UserProfile.bio
-
     @Size(max = 100, message = "Display name must be at most 100 characters")
     private String displayName;         // Optional - UserProfile.displayName (if different from name)
-
-
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private boolean isBlocked;
     private String fcmToken;            // Optional - For push notifications
-
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime trialEndsAt;
-
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private SubscriptionStatus subscriptionStatus;
-
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime subscriptionExpiresAt;
 }
