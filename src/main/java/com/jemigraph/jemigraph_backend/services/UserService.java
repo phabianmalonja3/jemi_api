@@ -51,8 +51,8 @@ public class UserService implements UserDetailsService {
   public Page<PhotographerProfileDTO> getPhotographers(int page, int size, String search) {
     Pageable pageable = PageRequest.of(page, size);
 
-    Page<User> userPage = userRepository.findAllByRole(UserRole.PHOTOGRAPHER, pageable);
-
+    Page<User> userPage =
+        userRepository.findAllByRoleAndAccountNonLockedTrue(UserRole.PHOTOGRAPHER, pageable);
     return userPage.map(photographerMappper::toDto);
   }
 
@@ -156,6 +156,4 @@ public class UserService implements UserDetailsService {
         userRepository.findAllByRoleOrderByAverageRatingDesc(UserRole.PHOTOGRAPHER, pageable);
     return userPage.map(photographerMappper::toDto);
   }
-
-
 }

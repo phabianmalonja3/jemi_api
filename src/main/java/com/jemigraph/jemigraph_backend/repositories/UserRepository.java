@@ -58,4 +58,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   @Query("SELECT u FROM User u WHERE u.role = :role ORDER BY u.averageRating DESC")
   Page<User> findAllByRoleOrderByAverageRatingDesc(@Param("role") UserRole role, Pageable pageable);
+
+  Page<User> findAllByRoleAndAccountNonLockedTrue(UserRole userRole, Pageable pageable);
 }
