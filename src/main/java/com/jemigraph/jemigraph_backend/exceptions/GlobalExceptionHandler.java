@@ -106,13 +106,10 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(LockedException.class)
-  public ResponseEntity<ApiErrorResponseDTO> handleLockedAccountr(LockedException ex) {
+  public ResponseEntity<ApiErrorResponseDTO> handleLockedAccount(LockedException ex) {
     ApiErrorResponseDTO response =
         new ApiErrorResponseDTO(
-            HttpStatus.LOCKED.value(),
-            "Account suspended due to debt: Your account has been locked because your debt has exceeded 7 days. Please clear your balance to continue.",
-            LocalDateTime.now(),
-            null);
+            HttpStatus.LOCKED.value(), ex.getMessage(), LocalDateTime.now(), null);
     return new ResponseEntity<>(response, HttpStatus.LOCKED);
   }
 
@@ -129,13 +126,10 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(DuplicatePackageLevelException.class)
   public ResponseEntity<ApiErrorResponseDTO> handleDuplicatePackageLevel(
-          DuplicatePackageLevelException ex) {
-    ApiErrorResponseDTO error = new ApiErrorResponseDTO(
-            HttpStatus.CONFLICT.value(),
-            ex.getMessage(),
-            LocalDateTime.now(),
-            null
-    );
+      DuplicatePackageLevelException ex) {
+    ApiErrorResponseDTO error =
+        new ApiErrorResponseDTO(
+            HttpStatus.CONFLICT.value(), ex.getMessage(), LocalDateTime.now(), null);
     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
   }
 
