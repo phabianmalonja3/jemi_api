@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.Entities;
 
+import com.jemigraph.jemigraph_backend.enums.RequestStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;

@@ -122,21 +122,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
       String transactionNumber = generateTransactionNumber();
 
-      //      log.info(
-      //          "Starting CashPay payment. transactionNumber={}, user={}, plan={}, amount={},
-      // phone={}",
-      //          transactionNumber,
-      //          user.getEmail(),
-      //          plan.getName(),
-      //          amount,
-      //          formattedPhone);
-      //
       String referenceNumber = generatePaymentReference(token, transactionNumber);
-      //
-
-      //       =========================================================
-      //       SEND USSD PUSH
-      //       =========================================================
 
       JsonNode ussdResponse = sendUssdPush(token, transactionNumber, formattedPhone, amount);
 
@@ -150,10 +136,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
         throw new RuntimeException("CashPay USSD Push failed: " + description);
       }
-
-      // =========================================================
-      // SAVE PAYMENT
-      // =========================================================
 
       Payment payment =
           Payment.builder()
@@ -410,9 +392,10 @@ public class CashPayServiceImpl implements PaymentSystemService {
   public boolean handleCallback(PaymentCallbackDto callbackPayload) {
     try {
       if (callbackPayload == null) {
-        //        log.warn("Received empty CashPay callback");
+        log.warn("Received empty CashPay callback");
         return false;
       }
+
       String transactionNumber = callbackPayload.getTransactionNumber();
       String paymentStatus = callbackPayload.getStatus();
       Object referenceNumberObj = callbackPayload.getReferenceNumber();
@@ -420,11 +403,12 @@ public class CashPayServiceImpl implements PaymentSystemService {
       Object providerObj = callbackPayload.getProvider();
       Object amountObj = callbackPayload.getAmount();
       Object phoneObj = callbackPayload.getPhone();
+
       if (transactionNumber == null
           || transactionNumber.trim().isEmpty()
           || paymentStatus == null
           || paymentStatus.trim().isEmpty()) {
-        //        log.warn("Invalid CashPay callback: missing transactionNumber or status");
+        log.warn("Invalid CashPay callback: missing transactionNumber or status");
         return false;
       }
 
@@ -433,33 +417,59 @@ public class CashPayServiceImpl implements PaymentSystemService {
       Payment payment = paymentRepository.findByTransactionNumber(transaction).orElse(null);
 
       if (payment == null) {
-        //        log.warn("Payment not found for CashPay transactionNumber={}", transaction);
+        log.warn("Payment not found for transactionNumber={}", transaction);
         return false;
       }
 
+      log.info("Payment found: id={}, status={}", payment.getId(), payment.getStatus());
+
       if (payment.isCallbackProcessed()) {
-        //        log.info("CashPay callback already processed. transactionNumber={}", transaction);
+        log.info("Callback already processed. transactionNumber={}", transaction);
         return true;
       }
 
-      if (referenceNumberObj != null && payment.getReferenceNumber() != null) {
-        String callbackReference = referenceNumberObj.toString();
-        if (!payment.getReferenceNumber().equals(callbackReference)) {
+      // ============================================================
+      // ❌ ONDOA referenceNumber VALIDATION
+      // ============================================================
+      // Kwa nini? M-Pesa inatuma referenceNumber mpya kila callback,
+      // hivyo kulinganisha kunaweza kushindwa.
+      //
+      // transaction_number ni unique, hivyo inatosha kutambua payment.
+      //
+      // if (referenceNumberObj != null && payment.getReferenceNumber() != null) {
+      //   String callbackReference = referenceNumberObj.toString();
+      //   if (!payment.getReferenceNumber().equals(callbackReference)) {
+      //     return false;
+      //   }
+      // }
+      // ============================================================
 
-          return false;
-        }
+      // ============================================================
+      // ✅ Weka referenceNumber mpya kutoka callback
+      // ============================================================
+      if (referenceNumberObj != null) {
+        String callbackReference = referenceNumberObj.toString();
+        log.info(
+            "Updating referenceNumber from {} to {}",
+            payment.getReferenceNumber(),
+            callbackReference);
+        payment.setReferenceNumber(callbackReference);
       }
 
+      // ============================================================
+      // ❌ ONDOA amount VALIDATION (kama amount inaweza kutofautiana)
+      // ============================================================
+      // Kama unataka kuweka validation ya amount, weka kama warning tu:
       if (amountObj != null && payment.getAmount() != null) {
         try {
           BigDecimal callbackAmount = new BigDecimal(amountObj.toString());
           if (payment.getAmount().compareTo(callbackAmount) != 0) {
-
-            return false;
+            log.warn("Amount mismatch: DB={}, callback={}", payment.getAmount(), callbackAmount);
+            // ❌ USIRUDISHE false — endelea na processing
+            // return false;
           }
         } catch (NumberFormatException e) {
-          //          log.warn("Invalid amount in CashPay callback: {}", amountObj);
-          return false;
+          log.warn("Invalid amount in callback: {}", amountObj);
         }
       }
 
@@ -468,10 +478,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
       int attempts = payment.getCallbackAttempts() == null ? 0 : payment.getCallbackAttempts();
       payment.setCallbackAttempts(attempts + 1);
-
-      if (referenceNumberObj != null) {
-        payment.setReferenceNumber(referenceNumberObj.toString());
-      }
 
       if (receiptNumberObj != null) {
         payment.setReceiptNumber(receiptNumberObj.toString());
@@ -499,7 +505,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
           sendPaymentWebSocketNotification(
               payment, "SUCCESS", "Payment successful. Your subscription is now active.");
         } catch (Exception e) {
-
+          log.error("Failed to send WebSocket notification", e);
         }
 
         return true;
@@ -514,7 +520,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
           sendPaymentWebSocketNotification(
               payment, "FAILED", "Your payment could not be completed. Please try again.");
         } catch (Exception e) {
-
+          log.error("Failed to send WebSocket notification", e);
         }
 
         return true;
@@ -534,7 +540,71 @@ public class CashPayServiceImpl implements PaymentSystemService {
 
   @Override
   public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId) {
-    return null;
+    log.info("🔍 Fetching payment status for orderId={}", orderId);
+
+    // 1. Tafuta payment kwa transaction_number (orderId)
+    Payment payment =
+        paymentRepository
+            .findByTransactionNumber(orderId)
+            .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
+
+    log.info("✅ Payment found: id={}, status={}", payment.getId(), payment.getStatus());
+
+    // 2. Pata user
+    User user =
+        userRepository
+            .findById(payment.getUserId())
+            .orElseThrow(
+                () -> new RuntimeException("User not found for payment: " + payment.getId()));
+
+    // 3. Pata plan
+    SubscriptionPlan plan =
+        subscriptionPlanRepository
+            .findById(payment.getPlanId())
+            .orElseThrow(
+                () -> new RuntimeException("Plan not found for payment: " + payment.getId()));
+
+    // 4. Pata subscription (kama ipo)
+    Subscription subscription =
+        subscriptionRepository.findByUserId(payment.getUserId()).orElse(null);
+
+    // 5. Jenga response
+    SubscriptionPaymentResponseDTO response = new SubscriptionPaymentResponseDTO();
+
+    response.setStatus(payment.getStatus().name()); // SUCCESS / PENDING / FAILED
+    response.setOrderId(payment.getTransactionNumber());
+    response.setAmount(BigDecimal.valueOf(payment.getAmount().doubleValue()));
+    response.setTransactionNumber(payment.getTransactionNumber());
+    response.setReferenceNumber(
+        payment.getReferenceNumber() != null ? payment.getReferenceNumber() : "N/A");
+    response.setPhoneNumber(payment.getPhoneNumber() != null ? payment.getPhoneNumber() : "N/A");
+    response.setPlanId(plan.getId().toString());
+    response.setPlanName(String.valueOf(plan.getName()));
+    response.setPlanDescription(plan.getDescription() != null ? plan.getDescription() : "");
+    response.setDurationInDays(plan.getDurationInDays() != null ? plan.getDurationInDays() : 30);
+
+    // 6. Subscription details
+    if (subscription != null) {
+      response.setStartDate(
+          subscription.getStartedAt() != null ? subscription.getStartedAt().toString() : "");
+      response.setEndDate(
+          subscription.getExpiresAt() != null ? subscription.getExpiresAt().toString() : "");
+      response.setSubscriptionActive(subscription.getStatus() == SubscriptionStatus.ACTIVE);
+      response.setSubscriptionStatus(subscription.getStatus().name());
+    } else {
+      response.setStartDate("");
+      response.setEndDate("");
+      response.setSubscriptionActive(false);
+      response.setSubscriptionStatus("INACTIVE");
+    }
+
+    log.info(
+        "✅ Response: status={}, planName={}, subscriptionActive={}",
+        response.getStatus(),
+        response.getPlanName(),
+        response.isSubscriptionActive());
+
+    return response;
   }
 
   @Override
@@ -657,6 +727,19 @@ public class CashPayServiceImpl implements PaymentSystemService {
     return paymentRepository
         .findById(id)
         .orElseThrow(() -> new RuntimeException("Payment not found with id: " + id));
+  }
+
+  @Override
+  public PaymentStatusResponse getPaymentStatus(String orderId) {
+    Payment payment =
+        paymentRepository
+            .findByOrderId(orderId)
+            .orElseThrow(() -> new RuntimeException("Payment not found"));
+    return PaymentStatusResponse.builder()
+        .orderId(payment.getOrderId())
+        .status(payment.getStatus().name())
+        .amount(payment.getAmount())
+        .build();
   }
 
   private void sendPaymentWebSocketNotification(Payment payment, String status, String message) {

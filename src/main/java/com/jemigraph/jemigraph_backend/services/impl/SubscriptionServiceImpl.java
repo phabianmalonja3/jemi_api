@@ -1,10 +1,10 @@
 package com.jemigraph.jemigraph_backend.services.impl;
 
-import com.jemigraph.jemigraph_backend.Entities.RequestStatus;
 import com.jemigraph.jemigraph_backend.Entities.Subscription;
 import com.jemigraph.jemigraph_backend.Entities.SubscriptionPlan;
 import com.jemigraph.jemigraph_backend.Entities.SubscriptionRequest;
 import com.jemigraph.jemigraph_backend.Entities.User;
+import com.jemigraph.jemigraph_backend.enums.RequestStatus;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionPlanType;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
@@ -25,10 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
 
+ 
   private final SubscriptionRequestRepository subscriptionRequestRepository;
   private final UserRepository userRepository;
   private final EmailService emailService;
-
   private final SubscriptionRepository subscriptionRepository;
   private final SubscriptionPlanRepository subscriptionPlanRepository;
 
@@ -104,6 +104,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         userRepository
             .findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
     SubscriptionPlan plan =
         subscriptionPlanRepository
             .findById(planId)
@@ -116,10 +117,27 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             : 30;
 
     LocalDateTime now = LocalDateTime.now();
-    Subscription subscription =
-        subscriptionRepository
-            .findByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Subscription not found for user: " + userId));
+
+    // 🔑 Tafuta subscription — kama haipo, UNDA mpya
+    Subscription subscription = subscriptionRepository.findByUserId(userId).orElse(null);
+
+    if (subscription == null) {
+      // 🔑 Unda mpya
+
+      subscription = new Subscription();
+      subscription.setUser(user);
+      subscription.setSubscriptionPackage(plan);
+      subscription.setStatus(SubscriptionStatus.ACTIVE);
+      subscription.setStartedAt(now);
+      subscription.setExpiresAt(now.plusDays(durationDays));
+
+      subscriptionRepository.save(subscription);
+
+      return;
+    }
+
+    // 🔑 Ipo tayari — extend
+
 
     LocalDateTime baseDate =
         subscription.getExpiresAt() != null && subscription.getExpiresAt().isAfter(now)
@@ -127,21 +145,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             : now;
 
     subscription.setSubscriptionPackage(plan);
-
     subscription.setStatus(SubscriptionStatus.ACTIVE);
-
     subscription.setStartedAt(baseDate);
-
     subscription.setExpiresAt(baseDate.plusDays(durationDays));
+
     subscriptionRepository.save(subscription);
 
-    System.out.println(
-        "Subscription successfully activated for user: "
-            + user.getEmail()
-            + ", plan: "
-            + plan.getName()
-            + ", expires on: "
-            + subscription.getExpiresAt());
   }
 
   @Override

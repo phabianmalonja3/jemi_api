@@ -2,11 +2,10 @@ package com.jemigraph.jemigraph_backend.Entities;
 
 import com.jemigraph.jemigraph_backend.enums.SystemPaymentStatus;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.*;
 
 @Entity
 @Table(
@@ -29,52 +28,21 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    /**
-     * Internal Jemigraph order ID.
-     *
-     * Example:
-     * JEMI-4B0B29D051884443
-     */
+
     @Column(nullable = false, unique = true)
     private String orderId;
 
-    /**
-     * CashPay transaction number.
-     *
-     * Example:
-     * JEMI-4B0B29D051884443
-     *
-     * This is the value sent to:
-     * /generate
-     * /ussdpush
-     * and returned in callback.
-     */
+
     @Column(unique = true)
     private String transactionNumber;
 
-    /**
-     * CashPay generated reference number.
-     *
-     * Example:
-     * 50123456
-     */
     @Column(unique = true)
     private String referenceNumber;
 
-    /**
-     * Receipt number returned by mobile money provider
-     * after successful payment.
-     */
+
     private String receiptNumber;
 
-    /**
-     * Provider used for payment.
-     *
-     * Example:
-     * M-PESA
-     * TigoPesa
-     * AirtelMoney
-     */
+   
     private String provider;
 
     /**

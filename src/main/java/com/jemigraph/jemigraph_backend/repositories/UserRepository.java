@@ -2,7 +2,6 @@ package com.jemigraph.jemigraph_backend.repositories;
 
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,11 +31,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   @Query("SELECT u.fcmToken FROM User u WHERE u.id = :userId")
   String findFcmTokenByUserId(@Param("userId") UUID userId);
 
-  Optional<User> findByResetToken(String resetToken);
-
   List<User> findByRoleAndIsVerified(UserRole role, boolean isVerified);
 
-  //    List<PhotographerPackageDTO> findAllByPackages(UserRole role, boolean isVerified);
   Page<User> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
   @EntityGraph(attributePaths = {"userProfile"})
@@ -51,8 +47,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
       "SELECT u FROM User u WHERE u.role = :role AND (:search IS NULL OR :search = '' OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
   Page<User> searchPhotographersByNameOrEmail(
       @Param("role") UserRole role, @Param("search") String search, Pageable pageable);
-
-  List<User> findAllByIdInAndIsOnlineTrue(Collection<UUID> ids);
 
   List<User> findAllByIdIn(List<UUID> uuidList);
 

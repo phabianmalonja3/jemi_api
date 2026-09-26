@@ -1,17 +1,12 @@
 package com.jemigraph.jemigraph_backend.services;
 
-import com.jemigraph.jemigraph_backend.DTO.PaymentCallbackDto;
-import com.jemigraph.jemigraph_backend.DTO.PaymentInitiationResponse;
-import com.jemigraph.jemigraph_backend.DTO.SubscriberResponseDto;
-import com.jemigraph.jemigraph_backend.DTO.SubscriptionPaymentResponseDTO;
+import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.Payment;
 import com.jemigraph.jemigraph_backend.Entities.User;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import org.springframework.stereotype.Service;
 
 @Service
 public interface PaymentSystemService {
@@ -31,4 +26,6 @@ public interface PaymentSystemService {
   byte[] generateBulkReceiptPdf(List<Payment> payments, User user);
 
   Payment getPaymentByIdAndUser(UUID id);
+
+  PaymentStatusResponse getPaymentStatus(String orderId);
 }

@@ -199,4 +199,9 @@ public class PaymentController {
       return ResponseEntity.internalServerError().build();
     }
   }
+
+  @GetMapping("/{orderId}/status")
+  public ResponseEntity<PaymentStatusResponse> getOderStatus(@PathVariable String orderId) {
+    return ResponseEntity.ok(paymentService.getPaymentStatus(orderId));
+  }
 }
