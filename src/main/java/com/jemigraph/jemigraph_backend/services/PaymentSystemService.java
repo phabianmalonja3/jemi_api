@@ -15,7 +15,7 @@ public interface PaymentSystemService {
 
   boolean handleCallback(PaymentCallbackDto callbackPayload);
 
-  SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId);
+  SubscriptionPaymentResponseDTO getPaymentStatusResponse(String transactionId);
 
   List<SubscriberResponseDto> getAllSubscribers();
 

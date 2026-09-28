@@ -11,24 +11,28 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
-    
-    List<Payment> findByUserId(UUID userId);
-    
-    Optional<Payment> findByOrderId(String orderId);
 
-    Optional<Payment> findByTransactionNumber(String transactionNumber);
+  List<Payment> findByUserId(UUID userId);
 
-    Optional<Payment> findByReferenceNumber(String referenceNumber);
+  Optional<Payment> findByOrderId(String orderId);
 
-    boolean existsByTransactionNumber(String transactionNumber);
+  Optional<Payment> findByTransactionNumber(String transactionNumber);
 
-    Optional<Payment> findFirstByUserIdAndStatusOrderByCreatedAtDesc(UUID id, SystemPaymentStatus systemPaymentStatus);
+  Optional<Payment> findByReferenceNumber(String referenceNumber);
 
-    List<Payment> findByUserIdAndCreatedAtBetween(UUID userId, LocalDateTime startDate, LocalDateTime endDate);
+  boolean existsByTransactionNumber(String transactionNumber);
 
-    List<Payment> findByUserIdAndCreatedAtAfter(UUID userId, LocalDateTime startDate);
+  Optional<Payment> findFirstByUserIdAndStatusOrderByCreatedAtDesc(
+      UUID id, SystemPaymentStatus systemPaymentStatus);
 
-    List<Payment> findByUserIdAndCreatedAtBefore(UUID userId, LocalDateTime endDate);
+  List<Payment> findByUserIdAndCreatedAtBetween(
+      UUID userId, LocalDateTime startDate, LocalDateTime endDate);
 
-    List<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId);
+  List<Payment> findByUserIdAndCreatedAtAfter(UUID userId, LocalDateTime startDate);
+
+  List<Payment> findByUserIdAndCreatedAtBefore(UUID userId, LocalDateTime endDate);
+
+  List<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+  Optional<Payment> findByTransactionId(String transactionId);
 }

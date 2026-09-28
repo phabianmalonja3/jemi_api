@@ -427,26 +427,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
         log.info("Callback already processed. transactionNumber={}", transaction);
         return true;
       }
-
-      // ============================================================
-      // ❌ ONDOA referenceNumber VALIDATION
-      // ============================================================
-      // Kwa nini? M-Pesa inatuma referenceNumber mpya kila callback,
-      // hivyo kulinganisha kunaweza kushindwa.
-      //
-      // transaction_number ni unique, hivyo inatosha kutambua payment.
-      //
-      // if (referenceNumberObj != null && payment.getReferenceNumber() != null) {
-      //   String callbackReference = referenceNumberObj.toString();
-      //   if (!payment.getReferenceNumber().equals(callbackReference)) {
-      //     return false;
-      //   }
-      // }
-      // ============================================================
-
-      // ============================================================
-      // ✅ Weka referenceNumber mpya kutoka callback
-      // ============================================================
       if (referenceNumberObj != null) {
         String callbackReference = referenceNumberObj.toString();
         log.info(
@@ -539,25 +519,22 @@ public class CashPayServiceImpl implements PaymentSystemService {
   }
 
   @Override
-  public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String orderId) {
-    log.info("🔍 Fetching payment status for orderId={}", orderId);
+  public SubscriptionPaymentResponseDTO getPaymentStatusResponse(String transactionId) {
+    log.info("🔍 Fetching payment status for orderId={}", transactionId);
 
-    // 1. Tafuta payment kwa transaction_number (orderId)
     Payment payment =
         paymentRepository
-            .findByTransactionNumber(orderId)
-            .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
+            .findByTransactionId(transactionId)
+            .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + transactionId));
 
     log.info("✅ Payment found: id={}, status={}", payment.getId(), payment.getStatus());
 
-    // 2. Pata user
     User user =
         userRepository
             .findById(payment.getUserId())
             .orElseThrow(
                 () -> new RuntimeException("User not found for payment: " + payment.getId()));
 
-    // 3. Pata plan
     SubscriptionPlan plan =
         subscriptionPlanRepository
             .findById(payment.getPlanId())
@@ -568,9 +545,7 @@ public class CashPayServiceImpl implements PaymentSystemService {
     Subscription subscription =
         subscriptionRepository.findByUserId(payment.getUserId()).orElse(null);
 
-    // 5. Jenga response
     SubscriptionPaymentResponseDTO response = new SubscriptionPaymentResponseDTO();
-
     response.setStatus(payment.getStatus().name()); // SUCCESS / PENDING / FAILED
     response.setOrderId(payment.getTransactionNumber());
     response.setAmount(BigDecimal.valueOf(payment.getAmount().doubleValue()));
@@ -582,8 +557,6 @@ public class CashPayServiceImpl implements PaymentSystemService {
     response.setPlanName(String.valueOf(plan.getName()));
     response.setPlanDescription(plan.getDescription() != null ? plan.getDescription() : "");
     response.setDurationInDays(plan.getDurationInDays() != null ? plan.getDurationInDays() : 30);
-
-    // 6. Subscription details
     if (subscription != null) {
       response.setStartDate(
           subscription.getStartedAt() != null ? subscription.getStartedAt().toString() : "");

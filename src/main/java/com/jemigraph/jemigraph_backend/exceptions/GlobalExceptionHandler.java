@@ -40,6 +40,15 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
   }
 
+  @ExceptionHandler(AzamPayAuthenticationException.class)
+  public ResponseEntity<ApiErrorResponseDTO> handleAzamPayAuthenticationException(
+      AzamPayAuthenticationException ex) {
+    ApiErrorResponseDTO response =
+        new ApiErrorResponseDTO(
+            HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage(), LocalDateTime.now(), null);
+    return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
   @ExceptionHandler(BadCredentialsException.class)
   public ResponseEntity<ApiErrorResponseDTO> handleBadCredentials(BadCredentialsException ex) {
     ApiErrorResponseDTO response =

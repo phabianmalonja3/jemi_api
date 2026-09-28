@@ -9,145 +9,119 @@ import lombok.*;
 
 @Entity
 @Table(
-        name = "system_payments",
-        indexes = {
-                @Index(name = "idx_payment_order_id", columnList = "orderId"),
-                @Index(name = "idx_payment_transaction_number", columnList = "transactionNumber"),
-                @Index(name = "idx_payment_reference_number", columnList = "referenceNumber"),
-                @Index(name = "idx_payment_user_id", columnList = "userId"),
-                @Index(name = "idx_payment_status", columnList = "status")
-        }
-)
+    name = "system_payments",
+    indexes = {
+      @Index(name = "idx_payment_order_id", columnList = "order_id"),
+      @Index(name = "idx_payment_transaction_number", columnList = "transaction_number"),
+      @Index(name = "idx_payment_reference_number", columnList = "reference_number"),
+      @Index(name = "idx_payment_transaction_id", columnList = "transaction_id"),
+      @Index(name = "idx_payment_user_id", columnList = "user_id"),
+      @Index(name = "idx_payment_status", columnList = "status")
+    })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
 
+  @Column(name = "order_id", nullable = false, unique = true)
+  private String orderId;
 
-    @Column(nullable = false, unique = true)
-    private String orderId;
+  @Column(name = "transaction_number", unique = true)
+  private String transactionNumber;
 
+  @Column(name = "reference_number", unique = true)
+  private String referenceNumber;
 
-    @Column(unique = true)
-    private String transactionNumber;
+  @Column(name = "receipt_number")
+  private String receiptNumber;
 
-    @Column(unique = true)
-    private String referenceNumber;
+  @Column(name = "currency")
+  @Builder.Default
+  private String currency = "TZS";
 
+  @Column(name = "provider")
+  private String provider;
 
-    private String receiptNumber;
+  @Column(name = "transaction_id", unique = true)
+  private String transactionId;
 
-   
-    private String provider;
+  @Column(name = "user_id", nullable = false)
+  private UUID userId;
 
-    /**
-     * User who is making payment.
-     */
-    @Column(nullable = false)
-    private UUID userId;
+  @Column(name = "plan_id", nullable = false)
+  private UUID planId;
 
-    /**
-     * Subscription plan being purchased.
-     */
-    @Column(nullable = false)
-    private UUID planId;
+  @Column(nullable = false, precision = 19, scale = 2)
+  private BigDecimal amount;
 
-    /**
-     * Amount in TZS.
-     */
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal amount;
+  @Column(name = "phone_number", nullable = false)
+  private String phoneNumber;
 
-    /**
-     * Customer phone number.
-     *
-     * Stored in international format:
-     * 2557XXXXXXXX
-     */
-    @Column(nullable = false)
-    private String phoneNumber;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private SystemPaymentStatus status;
 
-    /**
-     * Payment status.
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private SystemPaymentStatus status;
+  @Column(columnDefinition = "TEXT", name = "gateway_response")
+  private String gatewayResponse;
 
-    /**
-     * Complete gateway response.
-     *
-     * Useful for debugging/audit.
-     */
-    @Column(columnDefinition = "TEXT")
-    private String gatewayResponse;
+  @Column(columnDefinition = "TEXT", name = "callback_response")
+  private String callbackResponse;
 
-    /**
-     * CashPay callback response.
-     */
-    @Column(columnDefinition = "TEXT")
-    private String callbackResponse;
+  @Column(name = "provider_transaction_id")
+  private String providerTransactionId;
 
-    /**
-     * Provider receipt / transaction number.
-     */
-    private String providerTransactionId;
+  @Column(name = "created_at", nullable = false)
+  private LocalDateTime createdAt;
 
-    /**
-     * When payment was created.
-     */
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
 
-    /**
-     * When payment was last updated.
-     */
-    private LocalDateTime updatedAt;
+  @Column(name = "callback_received_at")
+  private LocalDateTime callbackReceivedAt;
 
-    /**
-     * When CashPay callback was received.
-     */
-    private LocalDateTime callbackReceivedAt;
+  @Builder.Default
+  @Column(name = "callback_attempts", nullable = false)
+  private Integer callbackAttempts = 0;
 
-    /**
-     * Number of callback attempts received.
-     */
-    @Builder.Default
-    @Column(nullable = false)
-    private Integer callbackAttempts = 0;
+  @Builder.Default
+  @Column(name = "callback_processed", nullable = false)
+  private boolean callbackProcessed = false;
 
-    /**
-     * Prevent processing the same successful callback twice.
-     */
-    @Builder.Default
-    @Column(nullable = false)
-    private boolean callbackProcessed = false;
+  @Column(name = "azam_reference")
+  private String azamReference;
 
-    @PrePersist
-    protected void onCreate() {
+  @Column(name = "external_reference")
+  private String externalReference;
 
-        createdAt = LocalDateTime.now();
+  @Column(name = "utility_ref")
+  private String utilityRef;
 
-        if (status == null) {
-            status = SystemPaymentStatus.PENDING;
-        }
+  @Column(name = "msisdn")
+  private String msisdn;
 
-        if (callbackAttempts == null) {
-            callbackAttempts = 0;
-        }
+  @Column(name = "callback_message", columnDefinition = "TEXT")
+  private String callbackMessage;
 
-        if (!callbackProcessed) {
-            callbackProcessed = false;
-        }
+  @PrePersist
+  protected void onCreate() {
+    createdAt = LocalDateTime.now();
+
+    if (status == null) {
+      status = SystemPaymentStatus.PENDING;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    if (callbackAttempts == null) {
+      callbackAttempts = 0;
     }
+  }
+
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = LocalDateTime.now();
+  }
 }

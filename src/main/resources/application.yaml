@@ -140,3 +140,11 @@ webline:
     base-url: ${WEBLINE_BASE_URL}
     sender-id: ${WEBLINE_SENDER_ID}
     type: ${WEBLINE_SMS_TYPE:plain}
+
+azam:
+  pesa:
+    app-name: ${AZAMPESA_APP_NAME:sandbox}
+    client-id: ${AZAMPESA_CLIENT_ID:394caad1-ca70-4864-b92d-1e0102884506}
+    client-secret: ${AZAMPESA_CLIENT_SECRET:MWSj1FZpjIYz4maTv8yDbmdZNsRq+V91ct8drg3Kut6KV9xPdFPuZdxzI90L1zGUJ+EHAs4FZvkqKkyM3ttI6+45+xlwWv4p2hE2hjTqIXb8p939/znQMrbubfxhvjGDa2229kIO15T4/JWWLxXqROADqLCpGOeiaPfO054WbFPbii8ZEdQMj/z4HhL9rueK1xHCm3F38yBfkJXr1H2ie6FuKpDTkLNQQ5o4SggjRD4z9NgmAZU4VsedfdDY9iKrOVTPI8n5B4rM7i7L//T/CY0foPpQaMFNnrlU9zLn6KFvgjV48EgvPoZRohkT3T68ezoQ8+yT1TxilBEHN/P0oUHUIPNHpUZNQBmSwzx5T0CS3YiVkuzq7R4LHLAFHDV6gTpWf60d81Odojxhy0P7it3Y2xd9yDW7056ovgdp7ddZjDGSpzWTuQ8olIhybGx1x/HuZ5elxWlsRNF1jbHmh1tTF7vXjrDbhmJxxbA9iVlHhIF5bDj1za7I9iRB/StJHf1hCr9+t3PJ30gGwowjo85IjcVCkv6JejPK3yXH28GdgdmHBy+Mo+XeTEw7eM8Gh3oNyBkdDgtZsedIEM/Guy96wqsriviJ7+HsNL005LuIt0vjgDyir5zx6ySV08cphvkdyKmrxRU1SlgItm9fDsIYRPyOR61YDTme0WHmfuo=}
+    auth-url: ${AZAMPESA_AUTH_URL:https://authenticator-sandbox.azampay.co.tz}
+    base-url: ${AZAMPESA_BASE_URL:https://sandbox.azampay.co.tz}

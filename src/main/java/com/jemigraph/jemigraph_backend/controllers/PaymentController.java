@@ -5,6 +5,7 @@ import com.jemigraph.jemigraph_backend.Entities.Payment;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.PaymentRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
+import com.jemigraph.jemigraph_backend.services.AzamPesaService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -31,6 +32,7 @@ public class PaymentController {
   private final PaymentSystemService paymentService;
   private final UserRepository userRepository;
   private final PaymentRepository paymentRepository;
+  private final AzamPesaService azamPesaService;
 
   @GetMapping("/my-payments")
   public ResponseEntity<List<Payment>> getMyPayments(Principal principal) {
@@ -54,58 +56,47 @@ public class PaymentController {
     return ResponseEntity.ok(payments);
   }
 
-  @PostMapping("/subscription/pay")
-  public ResponseEntity<PaymentInitiationResponse> initiatePayment(
-      @RequestParam String email, @RequestParam UUID planId, @RequestParam String phoneNumber) {
-
-    User currentUser =
-        userRepository
-            .findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-    PaymentInitiationResponse response =
-        paymentService.initiatePaymentAsync(currentUser, planId, phoneNumber);
-
-    return ResponseEntity.ok(response);
-  }
-
   @PostMapping("/pay")
-  public ResponseEntity<PaymentInitiationResponse> initiatePayment(
-      Principal principal, @Valid @RequestParam PaymentInitRequestDTO paymentInitRequestDTO) {
+  public ResponseEntity<MnoCheckoutResponse> initiatePayment(
+      Principal principal, @Valid @RequestBody PaymentInitRequestDTO paymentInitRequestDTO) {
 
     User currentUser =
         userRepository
             .findByEmail(principal.getName())
             .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
 
-    PaymentInitiationResponse response =
-        paymentService.initiatePaymentAsync(
-            currentUser, paymentInitRequestDTO.getPlanId(), paymentInitRequestDTO.getPhoneNumber());
-
+    MnoCheckoutResponse response =
+        azamPesaService.mnoCheckout(
+            currentUser,
+            paymentInitRequestDTO.getPlanId(),
+            paymentInitRequestDTO.getPhoneNumber(),
+            paymentInitRequestDTO.getProvider());
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/status/{orderId}")
+  @GetMapping("/status/{transactionId}")
   public ResponseEntity<SubscriptionPaymentResponseDTO> getPaymentStatus(
-      @PathVariable String orderId) {
-    SubscriptionPaymentResponseDTO response = paymentService.getPaymentStatusResponse(orderId);
+      @PathVariable String transactionId) {
+    SubscriptionPaymentResponseDTO response =
+        paymentService.getPaymentStatusResponse(transactionId);
     return ResponseEntity.ok(response);
   }
 
   @PostMapping("/callback")
   public ResponseEntity<Map<String, String>> paymentCallback(
-      @RequestBody PaymentCallbackDto callbackPayload) {
+      @RequestBody MnoCallbackDTO callbackPayload) {
 
-    boolean processed = paymentService.handleCallback(callbackPayload);
-
-    if (processed) {
+    try {
+      azamPesaService.processCallback(callbackPayload);
 
       return ResponseEntity.ok(
-          Map.of("status", "received", "message", "Callback processed successfully"));
-    }
+          Map.of("status", "success", "message", "Callback processed successfully"));
 
-    return ResponseEntity.badRequest()
-        .body(Map.of("status", "failed", "message", "Invalid or failed payment callback"));
+    } catch (Exception e) {
+
+      return ResponseEntity.badRequest()
+          .body(Map.of("status", "failed", "message", e.getMessage()));
+    }
   }
 
   @GetMapping("/{orderId}/receipt")
@@ -200,8 +191,14 @@ public class PaymentController {
     }
   }
 
-  @GetMapping("/{orderId}/status")
-  public ResponseEntity<PaymentStatusResponse> getOderStatus(@PathVariable String orderId) {
-    return ResponseEntity.ok(paymentService.getPaymentStatus(orderId));
+  @GetMapping("/partners")
+  public ResponseEntity<?> getPartners() {
+    try {
+      List<Map<String, Object>> partners = azamPesaService.getPaymentPartners();
+      return ResponseEntity.ok(partners);
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", e.getMessage()));
+    }
   }
 }

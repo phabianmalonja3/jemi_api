@@ -16,13 +16,15 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PaymentInitRequestDTO {
 
-    @NotNull(message = "Plan ID is required")
-    private UUID planId;
+  @NotNull(message = "Plan ID is required")
+  private UUID planId;
 
-    @NotBlank(message = "Phone number is required")
-    @Pattern(
-            regexp = "^255[0-9]{9}$",
-            message = "Phone number must be in international format (e.g., 2557XXXXXXXX)"
-    )
-    private String phoneNumber;
+  @NotBlank(message = "Phone number is required")
+  @Pattern(
+      regexp = "^255[0-9]{9}$",
+      message = "Phone number must be in international format (e.g., 2557XXXXXXXX)")
+  private String phoneNumber;
+
+  @NotBlank(message = "Provider is required (e.g., Tigo, Vodacom, Airtel)")
+  private String provider;
 }
