@@ -341,108 +341,157 @@ public class EmailServiceImpl implements EmailService {
 
       String htmlContent =
           """
-					<html>
-					<body style="font-family: Arial, sans-serif;
-								 line-height: 1.6;
-								 color: #333;
-								 background-color: #f8f9fa;
-								 margin: 0;
-								 padding: 20px;">
+			<html>
+			<body style="font-family: Arial, sans-serif;
+					   line-height: 1.6;
+					   color: #333;
+					   background-color: #f8f9fa;
+					   margin: 0;
+					   padding: 20px;">
 
-					  <div style="max-width: 600px;
-								  margin: auto;
-								  background-color: #ffffff;
-								  border-radius: 10px;
-								  overflow: hidden;
-								  border: 1px solid #e5e5e5;">
+			  <div style="max-width: 600px;
+						margin: auto;
+						background-color: #ffffff;
+						border-radius: 10px;
+						overflow: hidden;
+						border: 1px solid #e5e5e5;">
 
-						<div style="background-color: #25632D;
-									padding: 25px;
-									text-align: center;">
+				<!-- HEADER -->
+				<div style="background-color: #25632D;
+						 padding: 25px;
+						 text-align: center;">
 
-						  <h2 style="color: #ffffff; margin: 0;">
-							Welcome to Jemigraph!
-						  </h2>
+				  <h2 style="color: #ffffff; margin: 0;">
+					Welcome to Jemigraph!
+				  </h2>
 
-						</div>
+				</div>
 
-						<div style="padding: 30px;">
+				<!-- CONTENT -->
+				<div style="padding: 30px;">
 
-						  <h3 style="color: #25632D;">
-							Hello %s,
-						  </h3>
+				  <h3 style="color: #25632D;">
+					Hello %s,
+				  </h3>
 
-						  <p>
-							Congratulations! Your Jemigraph account has been
-							successfully activated.
-						  </p>
+				  <p>
+					Congratulations! Your Jemigraph account has been
+					successfully activated.
+				  </p>
 
-						  <p>
-							You can now log in to your account, complete your profile,
-							manage your photography services, and start receiving
-							booking requests from clients.
-						  </p>
+				  <p>
+					You can now log in to your account, complete your profile,
+					manage your photography services, and start receiving
+					booking requests from clients.
+				  </p>
 
-						  <div style="background-color: #e8f5e9;
-									  border-radius: 8px;
-									  padding: 20px;
-									  margin: 25px 0;">
+				  <!-- FREE TRIAL -->
+				  <div style="background-color: #e8f5e9;
+						   border-radius: 8px;
+						   padding: 20px;
+						   margin: 25px 0;">
 
-							<h3 style="color: #25632D; margin-top: 0;">
-							  🎉 Your Free Trial
-							</h3>
+					<h3 style="color: #25632D; margin-top: 0;">
+					  Your Free Trial
+					</h3>
 
-							<p>
-							  As a welcome gift, we have activated a
-							  <strong>30-day free trial</strong> for your account.
-							</p>
+					<p>
+					  As a welcome gift, we have activated a
+					  <strong>30-day free trial</strong> for your account.
+					</p>
 
-							<p style="margin-bottom: 0;">
-							  You can enjoy the available photographer features
-							  during your free trial without making a subscription
-							  payment.
-							</p>
+					<p style="margin-bottom: 0;">
+					  You can enjoy the available photographer features
+					  during your free trial without making a subscription
+					  payment.
+					</p>
 
-						  </div>
+				  </div>
 
-						  <p>
-							Your free trial starts from the date your account is
-							activated and remains active for <strong>30 days</strong>.
-						  </p>
+				  <p>
+					Your free trial starts from the date your account is
+					activated and remains active for <strong>30 days</strong>.
+				  </p>
 
-						  <p>
-							We are excited to have you as part of Jemigraph and
-							look forward to helping you connect with more clients.
-						  </p>
+				  <!-- YOUTUBE TUTORIAL -->
+				  <div style="background-color: #f8f9fa;
+						   border: 1px solid #e5e5e5;
+						   border-radius: 8px;
+						   padding: 20px;
+						   margin: 25px 0;
+						   text-align: center;">
 
-						  <p>
-							If you have any questions or need assistance, feel free
-							to contact our support team.
-						  </p>
+					<h3 style="color: #25632D; margin-top: 0;">
+					  Learn How to Use Jemigraph
+					</h3>
 
-						  <p style="margin-top: 30px;">
-							Best regards,<br>
-							<strong>The Jemigraph Team</strong>
-						  </p>
+					<p style="margin-bottom: 20px;">
+					  New to Jemigraph? Watch our video tutorials and learn
+					  how to set up your profile, manage your photography
+					  packages, and use the app effectively.
+					</p>
 
-						</div>
+					<a href="https://www.youtube.com/@jemigraphtour"
+					   target="_blank"
+					   style="display: inline-block;
+							  background-color: #FF0000;
+							  color: #ffffff;
+							  text-decoration: none;
+							  padding: 12px 24px;
+							  border-radius: 6px;
+							  font-weight: bold;
+							  font-size: 14px;">
 
-						<div style="text-align: center;
-									padding: 15px;
-									background-color: #f8f9fa;
-									color: #999;
-									font-size: 12px;">
+					  ▶ Watch Tutorials on YouTube
 
-						  © Jemigraph. All rights reserved.
+					</a>
 
-						</div>
+					<p style="font-size: 12px;
+							  color: #888;
+							  margin-top: 15px;
+							  margin-bottom: 0;">
 
-					  </div>
+					  Jemigraph Official YouTube Channel
 
-					</body>
-					</html>
-					"""
-              .formatted(user.getName());
+					</p>
+
+				  </div>
+
+				  <p>
+					We are excited to have you as part of Jemigraph and
+					look forward to helping you connect with more clients.
+				  </p>
+
+				  <p>
+					If you have any questions or need assistance, feel free
+					to contact our support team.
+				  </p>
+
+				  <p style="margin-top: 30px;">
+					Best regards,<br>
+					<strong>The Jemigraph Team</strong>
+				  </p>
+
+				</div>
+
+				<!-- FOOTER -->
+				<div style="text-align: center;
+						 padding: 15px;
+						 background-color: #f8f9fa;
+						 color: #999;
+						 font-size: 12px;">
+
+				  © Jemigraph. All rights reserved.
+
+				</div>
+
+			  </div>
+
+			</body>
+			</html>
+			""";
+
+      htmlContent.formatted(user.getName());
 
       helper.setText(htmlContent, true);
 
