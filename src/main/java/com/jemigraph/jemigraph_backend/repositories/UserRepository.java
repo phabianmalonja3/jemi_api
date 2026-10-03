@@ -72,5 +72,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   Page<User> findAllPhotographersWithLocationAndPackages(
       @Param("role") UserRole role, Pageable pageable);
 
-  Page<User> findAllByRoleAndAccountNonLockedTrue(UserRole userRole, Pageable pageable);
+  @Query(
+"""
+    SELECT DISTINCT u
+    FROM User u
+    WHERE u.role = :userRole
+      AND u.accountNonLocked = true
+      AND u.location IS NOT NULL
+      AND SIZE(u.packages) > 0
+""")
+  Page<User> findAllByRoleAndAccountNonLockedTrue(
+      @Param("userRole") UserRole userRole, Pageable pageable);
 }
