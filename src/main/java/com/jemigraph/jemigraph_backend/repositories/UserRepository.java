@@ -50,7 +50,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   List<User> findAllByIdIn(List<UUID> uuidList);
 
-  @Query("SELECT u FROM User u WHERE u.role = :role ORDER BY u.averageRating DESC")
+  @Query(
+"""
+    SELECT DISTINCT u
+    FROM User u
+    WHERE u.role = :role
+      AND u.location IS NOT NULL
+      AND SIZE(u.packages) > 0
+    ORDER BY u.averageRating DESC
+""")
   Page<User> findAllByRoleOrderByAverageRatingDesc(@Param("role") UserRole role, Pageable pageable);
 
   @Query(
