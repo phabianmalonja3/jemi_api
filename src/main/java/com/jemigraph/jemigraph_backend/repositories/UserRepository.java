@@ -22,7 +22,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   boolean existsByEmail(String email);
 
-  Page<User> findAllByRole(UserRole role, Pageable pageable);
+  @Query(
+"""
+    SELECT DISTINCT u
+    FROM User u
+    WHERE u.role = :role
+      AND u.location IS NOT NULL
+      AND SIZE(u.packages) > 0
+""")
+  Page<User> findAllByRole(@Param("role") UserRole role, Pageable pageable);
 
   Optional<User> findByIdAndRole(UUID id, UserRole role);
 
