@@ -57,6 +57,7 @@ public class UserService implements UserDetailsService {
   }
 
   public Page<PhotographerProfileDTO> getPhotographersALll(int page, int size) {
+
     Pageable pageable = PageRequest.of(page, size);
 
     Page<User> userPage = userRepository.findAllByRole(UserRole.PHOTOGRAPHER, pageable);

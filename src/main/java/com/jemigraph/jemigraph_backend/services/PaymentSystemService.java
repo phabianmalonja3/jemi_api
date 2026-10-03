@@ -11,10 +11,6 @@ import org.springframework.stereotype.Service;
 @Service
 public interface PaymentSystemService {
 
-  PaymentInitiationResponse initiatePaymentAsync(User user, UUID planId, String phoneNumber);
-
-  boolean handleCallback(PaymentCallbackDto callbackPayload);
-
   SubscriptionPaymentResponseDTO getPaymentStatusResponse(String transactionId);
 
   List<SubscriberResponseDto> getAllSubscribers();

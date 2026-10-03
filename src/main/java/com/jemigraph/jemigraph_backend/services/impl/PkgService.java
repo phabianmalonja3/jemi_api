@@ -24,8 +24,8 @@ public class PkgService {
     return pkgRepository.findAll().stream().map(pkgMapper::toDto).toList();
   }
 
-  public PhotographerPackageDTO createPackage(PhotographerPackageDTO phottographerPackageDTO) {
-    Pkg entity = pkgMapper.toEntity(phottographerPackageDTO);
+  public PhotographerPackageDTO createPackage(PhotographerPackageDTO photographerPackageDTO) {
+    Pkg entity = pkgMapper.toEntity(photographerPackageDTO);
     Pkg saved = pkgRepository.save(entity);
     return pkgMapper.toDto(saved);
   }

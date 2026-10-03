@@ -155,7 +155,8 @@ public class LiveStatusService {
   }
 
   public List<Map<String, Object>> getNearbyPhotographers(double lat, double lng) {
-    log.info(String.valueOf(lat), lng);
+
+    log.info("Searching nearby photographers: lat={}, lng={}", lat, lng);
 
     Circle circle = new Circle(new Point(lng, lat), new Distance(7, Metrics.KILOMETERS));
 
@@ -166,6 +167,7 @@ public class LiveStatusService {
                 REDIS_GEO_KEY,
                 circle,
                 RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs().includeDistance());
+
     if (results == null || results.getContent().isEmpty()) {
       return Collections.emptyList();
     }
@@ -176,16 +178,22 @@ public class LiveStatusService {
                 result -> {
                   try {
                     String idStr = result.getContent().getName().toString().trim();
+
                     return UUID.fromString(idStr);
+
                   } catch (Exception e) {
                     return null;
                   }
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-    if (uuidList.isEmpty()) return Collections.emptyList();
+
+    if (uuidList.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     List<User> users = userRepository.findAllByIdIn(uuidList);
+
     Map<UUID, User> userMap =
         users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
 
@@ -193,20 +201,46 @@ public class LiveStatusService {
         .map(
             result -> {
               String idStr = result.getContent().getName().toString().trim();
-              User user = userMap.get(UUID.fromString(idStr));
 
-              if (user == null) return null;
+              UUID userId;
+
+              try {
+                userId = UUID.fromString(idStr);
+              } catch (Exception e) {
+                return null;
+              }
+
+              User user = userMap.get(userId);
+
+              // =====================================================
+              // PHOTOGRAPHER MUST HAVE:
+              // 1. User
+              // 2. Location
+              // 3. At least one package
+              // =====================================================
+              if (user == null
+                  || user.getLocation() == null
+                  || user.getPackages() == null
+                  || user.getPackages().isEmpty()) {
+
+                return null;
+              }
 
               String distanceDisplay = getString(result);
 
               Map<String, Object> map = new LinkedHashMap<>();
+
               map.put("userId", idStr);
+
               map.put("distanceKm", Math.round(result.getDistance().getValue() * 100.0) / 100.0);
+
               map.put("name", user.getName());
               map.put("profileImage", user.getProfileImageUrl());
               map.put("distance", distanceDisplay);
               map.put("isOnline", user.getIsOnline());
+
               map.put("rating", user.getAverageRating() != null ? user.getAverageRating() : 0.0);
+
               return map;
             })
         .filter(Objects::nonNull)

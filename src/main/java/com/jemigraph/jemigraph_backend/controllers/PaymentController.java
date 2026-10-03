@@ -64,7 +64,6 @@ public class PaymentController {
         userRepository
             .findByEmail(principal.getName())
             .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
-
     MnoCheckoutResponse response =
         azamPesaService.mnoCheckout(
             currentUser,
@@ -159,7 +158,6 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
       }
 
-      // Generate bulk PDF report
       byte[] pdfBytes = paymentService.generateBulkReceiptPdf(payments, user);
 
       String dateRange = "";
