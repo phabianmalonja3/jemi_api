@@ -156,8 +156,9 @@ public class UserService implements UserDetailsService {
     Pageable pageable = PageRequest.of(page, size);
 
     Page<User> userPage =
-        userRepository.findAllByRoleAndPackageIsNotNullAndLockedFalseOrderByAverageRatingDesc(
-            UserRole.PHOTOGRAPHER, pageable);
+        userRepository
+            .findAllByRoleAndPackagesIsNotNullAndAccountNonLockedTrueOrderByAverageRatingDesc(
+                UserRole.PHOTOGRAPHER, pageable);
 
     return userPage.map(photographerMappper::toDto);
   }
