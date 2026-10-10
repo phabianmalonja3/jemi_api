@@ -22,6 +22,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   boolean existsByEmail(String email);
 
+  Page<User>
+  findAllByRoleAndPackageIsNotNullAndLockedFalseOrderByAverageRatingDesc(
+          UserRole role, Pageable pageable);
+
   @Query(
 """
     SELECT DISTINCT u
