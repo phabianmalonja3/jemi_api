@@ -107,6 +107,10 @@ public class Payment {
   @Column(name = "callback_message", columnDefinition = "TEXT")
   private String callbackMessage;
 
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "invoice_id", nullable = false)
+  private Invoice invoice;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

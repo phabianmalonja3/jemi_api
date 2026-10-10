@@ -1,13 +1,12 @@
-package com.jemigraph.jemigraph_backend.enums;
+package com.jemigraph.jemigraph_backend.Entities;
 
-import com.jemigraph.jemigraph_backend.Entities.Payment;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import com.jemigraph.jemigraph_backend.enums.SystemPaymentStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
@@ -35,4 +34,6 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
   List<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
   Optional<Payment> findByTransactionId(String transactionId);
+
+  List<Payment> findByInvoiceIdOrderByCreatedAtDesc(UUID invoiceId);
 }

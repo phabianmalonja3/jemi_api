@@ -1,20 +1,20 @@
 package com.jemigraph.jemigraph_backend.controllers;
 
-import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.DTO.GalleryDTO;
+import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.FileUploadType;
 import com.jemigraph.jemigraph_backend.mappers.GaleryMapper;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.GalleryService;
 import com.jemigraph.jemigraph_backend.services.impl.FileStorageService;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/gallery")
@@ -50,6 +50,7 @@ public class GalleryController {
     }
 
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMedia(
             @PathVariable UUID id,
@@ -57,9 +58,25 @@ public class GalleryController {
 
         try {
             galleryService.deleteMedia(id, principal.getName());
-            return ResponseEntity.ok("Media Deleted!");
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "success", true,
+                            "message", "Media Deleted!"
+                    )
+            );
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                            Map.of(
+                                    "success", false,
+                                    "message", e.getMessage()
+                            )
+                    );
         }
     }
+
+
 }

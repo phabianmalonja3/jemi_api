@@ -2,20 +2,18 @@ package com.jemigraph.jemigraph_backend.services.impl;
 
 import com.jemigraph.jemigraph_backend.DTO.MnoCallbackDTO;
 import com.jemigraph.jemigraph_backend.DTO.MnoCheckoutResponse;
-import com.jemigraph.jemigraph_backend.Entities.Payment;
-import com.jemigraph.jemigraph_backend.Entities.Subscription;
-import com.jemigraph.jemigraph_backend.Entities.SubscriptionPlan;
-import com.jemigraph.jemigraph_backend.Entities.User;
+import com.jemigraph.jemigraph_backend.Entities.*;
 import com.jemigraph.jemigraph_backend.configs.AzamPesaConfig;
-import com.jemigraph.jemigraph_backend.enums.PaymentRepository;
 import com.jemigraph.jemigraph_backend.enums.SubscriptionStatus;
 import com.jemigraph.jemigraph_backend.enums.SystemPaymentStatus;
 import com.jemigraph.jemigraph_backend.exceptions.AzamPayAuthenticationException;
+import com.jemigraph.jemigraph_backend.repositories.InvoiceRepository;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionPlanRepository;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.schedulers.AzamTokenManager;
 import com.jemigraph.jemigraph_backend.services.AzamPesaService;
+import com.jemigraph.jemigraph_backend.services.InvoiceService;
 import com.jemigraph.jemigraph_backend.utils.CallbackSignatureVerifier;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,6 +36,8 @@ public class AzamPesaServiceImpl implements AzamPesaService {
   private final AzamTokenManager azamTokenManager;
   private final CallbackSignatureVerifier callbackSignatureVerifier;
   private final UserRepository userRepository;
+  private final InvoiceService invoiceService;
+  private final InvoiceRepository invoiceRepository;
 
   @Override
   public MnoCheckoutResponse mnoCheckout(
@@ -45,15 +45,11 @@ public class AzamPesaServiceImpl implements AzamPesaService {
     if (user == null) {
       throw new RuntimeException("User is required");
     }
-
     if (planId == null) {
       throw new RuntimeException("Plan ID is required");
     }
-
     LocalDateTime now = LocalDateTime.now();
-
     Subscription subscription = subscriptionRepository.findByUserId(user.getId()).orElse(null);
-
     if (subscription != null
         && subscription.getStatus() == SubscriptionStatus.ACTIVE
         && subscription.getExpiresAt() != null
@@ -62,7 +58,6 @@ public class AzamPesaServiceImpl implements AzamPesaService {
       throw new RuntimeException(
           "You already have an active subscription expiring on: " + subscription.getExpiresAt());
     }
-
     SubscriptionPlan plan =
         subscriptionPlanRepository
             .findById(planId)
@@ -75,6 +70,7 @@ public class AzamPesaServiceImpl implements AzamPesaService {
     if (plan.getPrice() == null) {
       throw new RuntimeException("Subscription plan price is not configured: " + plan.getName());
     }
+    Invoice invoice = invoiceService.createInvoice(user, plan);
     BigDecimal planAmount = plan.getPrice();
     String transactionNumber = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     String externalId = "EXT-" + UUID.randomUUID();
@@ -125,6 +121,7 @@ public class AzamPesaServiceImpl implements AzamPesaService {
               .referenceNumber(azamTransactionId)
               .userId(user.getId())
               .planId(planId)
+              .invoice(invoice)
               .amount(planAmount)
               .transactionId(azamTransactionId)
               .phoneNumber(phoneNumber)
@@ -133,8 +130,10 @@ public class AzamPesaServiceImpl implements AzamPesaService {
               .callbackAttempts(0)
               .callbackProcessed(false)
               .build();
-
       paymentRepository.save(payment);
+      invoice.setSubscription(subscription);
+      invoiceRepository.save(invoice);
+
       log.info(
           "Ombi la malipo limetumwa na kuhifadhiwa kwa mafanikio. TransactionId ya AzamPay: {}",
           azamTransactionId);
@@ -209,6 +208,8 @@ public class AzamPesaServiceImpl implements AzamPesaService {
       payment.setReferenceNumber(callbackPayload.getReference());
       payment.setCallbackProcessed(true);
       paymentRepository.save(payment);
+      Invoice invoice = payment.getInvoice();
+      invoiceService.markAsPaid(invoice);
 
       User user =
           userRepository
@@ -232,6 +233,7 @@ public class AzamPesaServiceImpl implements AzamPesaService {
       subscription.setExpiresAt(expiresAt);
 
       subscriptionRepository.save(subscription);
+
       log.info("Subscription imewashwa kwa mafanikio kwa mtumiaji: {}", user.getId());
 
     } else {

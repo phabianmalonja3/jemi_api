@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
+import com.jemigraph.jemigraph_backend.Entities.Invoice;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
 import java.math.BigDecimal;
@@ -11,6 +12,8 @@ public interface EmailService {
   void sendAdminOtp(String toEmail);
 
   void sendAccountActivation(User user);
+
+  void sendInvoice(User user, Invoice invoice);
 
   void sendPhotographerApprovalRequest(
       String userName, String userEmail, String phone, UUID userId);

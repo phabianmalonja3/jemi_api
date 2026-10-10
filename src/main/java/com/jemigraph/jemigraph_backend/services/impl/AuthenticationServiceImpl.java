@@ -45,6 +45,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   private final SessionService sessionService;
   private final SubscriptionRepository subscriptionRepository;
   private final SubscriptionPlanRepository subscriptionPlanRepository;
+  private final LocationRepository locationRepository;
 
   @Override
   @Transactional
@@ -192,27 +193,27 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
   @Override
   @Transactional
-  public RegistrationResponseDTO createUser(RegisterRequestDTO userDto) {
+  public RegistrationResponseDTO createUser(RegisterRequestDTO registerRequestDTO) {
 
-    if (userRepository.existsByEmail(userDto.getEmail())) {
+    if (userRepository.existsByEmail(registerRequestDTO.getEmail())) {
       throw new UserAlreadyExistsException("Email Already Exist In Our System.");
     }
 
-    if ("ADMIN".equals(userDto.getRole())) {
+    if ("ADMIN".equals(registerRequestDTO.getRole())) {
       throw new SuperAdminException("You can't register as Super Admin In Our System.");
     }
     UserRole userRole;
     try {
-      userRole = UserRole.valueOf(userDto.getRole());
+      userRole = UserRole.valueOf(registerRequestDTO.getRole());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid role. Must be ADMIN, PHOTOGRAPHER, or CLIENT");
     }
 
     var userBuilder =
         User.builder()
-            .name(userDto.getName())
-            .email(userDto.getEmail())
-            .password(passwordEncoder.encode(userDto.getPassword()))
+            .name(registerRequestDTO.getName())
+            .email(registerRequestDTO.getEmail())
+            .password(passwordEncoder.encode(registerRequestDTO.getPassword()))
             .role(userRole)
             .isVerified(true)
             .isBusy(false)
@@ -225,32 +226,37 @@ public class AuthenticationServiceImpl implements AuthentificationService {
           UserProfile.builder()
               .user(savedUser)
               .displayName(
-                  userDto.getDisplayName() != null && !userDto.getDisplayName().isEmpty()
-                      ? userDto.getDisplayName()
-                      : userDto.getName())
-              .phone(userDto.getPhone())
-              .bio(userDto.getBio())
+                  registerRequestDTO.getDisplayName() != null
+                          && !registerRequestDTO.getDisplayName().isEmpty()
+                      ? registerRequestDTO.getDisplayName()
+                      : registerRequestDTO.getName())
+              .phone(registerRequestDTO.getPhone())
+              .bio(registerRequestDTO.getBio())
               .build();
 
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
 
       emailServiceAdmin.sendPhotographerApprovalRequest(
-          userDto.getName(), userDto.getEmail(), userDto.getPhone(), savedUser.getId());
+          registerRequestDTO.getName(),
+          registerRequestDTO.getEmail(),
+          registerRequestDTO.getPhone(),
+          savedUser.getId());
 
     } else if (userRole == UserRole.CLIENT
-        && userDto.getPhone() != null
-        && !userDto.getPhone().isEmpty()) {
+        && registerRequestDTO.getPhone() != null
+        && !registerRequestDTO.getPhone().isEmpty()) {
 
       UserProfile userProfile =
           UserProfile.builder()
               .user(savedUser)
               .displayName(
-                  userDto.getDisplayName() != null && !userDto.getDisplayName().isEmpty()
-                      ? userDto.getDisplayName()
-                      : userDto.getName())
-              .phone(userDto.getPhone())
-              .bio(userDto.getBio())
+                  registerRequestDTO.getDisplayName() != null
+                          && !registerRequestDTO.getDisplayName().isEmpty()
+                      ? registerRequestDTO.getDisplayName()
+                      : registerRequestDTO.getName())
+              .phone(registerRequestDTO.getPhone())
+              .bio(registerRequestDTO.getBio())
               .build();
 
       UserProfile savedProfile = userProfileRepository.save(userProfile);
@@ -259,6 +265,18 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
     if (userRole == UserRole.PHOTOGRAPHER) {
 
+      if (registerRequestDTO.getLatitude() != null
+          || registerRequestDTO.getLongitude() != null
+          || (registerRequestDTO.getAddress() != null
+              && !registerRequestDTO.getAddress().isBlank())) {
+
+        Location location = new Location();
+        location.setUser(savedUser);
+        location.setLatitude(registerRequestDTO.getLatitude());
+        location.setLongitude(registerRequestDTO.getLongitude());
+        location.setAddress(registerRequestDTO.getAddress());
+        locationRepository.save(location);
+      }
       SubscriptionPlan trialPackage =
           subscriptionPlanRepository
               .findByName(SubscriptionPlanType.MONTHLY)

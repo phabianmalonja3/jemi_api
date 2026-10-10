@@ -57,9 +57,9 @@ public class AuthentificationController {
 
   @PostMapping("/register")
   public ResponseEntity<RegistrationResponseDTO> register(
-      @NonNull @Valid @RequestBody RegisterRequestDTO userDTO) {
+      @NonNull @Valid @RequestBody RegisterRequestDTO registerRequestDTO) {
     return new ResponseEntity<>(
-        authentificationService.createUser(userDTO),
+        authentificationService.createUser(registerRequestDTO),
         HttpStatusCode.valueOf(org.apache.http.HttpStatus.SC_CREATED));
   }
 

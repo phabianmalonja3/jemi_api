@@ -212,12 +212,6 @@ public class LiveStatusService {
 
               User user = userMap.get(userId);
 
-              // =====================================================
-              // PHOTOGRAPHER MUST HAVE:
-              // 1. User
-              // 2. Location
-              // 3. At least one package
-              // =====================================================
               if (user == null
                   || user.getLocation() == null
                   || user.getPackages() == null

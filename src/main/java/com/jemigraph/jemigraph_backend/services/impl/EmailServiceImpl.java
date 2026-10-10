@@ -1,11 +1,13 @@
 package com.jemigraph.jemigraph_backend.services.impl;
 
+import com.jemigraph.jemigraph_backend.Entities.Invoice;
 import com.jemigraph.jemigraph_backend.Entities.OtpVerification;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
 import com.jemigraph.jemigraph_backend.repositories.OtpRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.EmailService;
+import com.jemigraph.jemigraph_backend.services.InvoicePdfService;
 import com.jemigraph.jemigraph_backend.services.SmsService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -17,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -36,6 +39,7 @@ public class EmailServiceImpl implements EmailService {
   private final UserRepository userRepository;
   private final OtpRepository otpRepository;
   private final SmsService smsService;
+  private final InvoicePdfService invoicePdfService;
 
   /** Send booking confirmation email. */
   @Override
@@ -505,6 +509,138 @@ public class EmailServiceImpl implements EmailService {
           "Failed to send account activation email to {}: {}", user.getEmail(), e.getMessage(), e);
 
       throw new RuntimeException("Failed to send account activation email", e);
+    }
+  }
+
+  @Override
+  @Async
+  public void sendInvoice(User user, Invoice invoice) {
+
+    try {
+      byte[] pdf = invoicePdfService.generateInvoicePdf(invoice);
+
+      MimeMessage message = mailSender.createMimeMessage();
+
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom(FROM_EMAIL, FROM_NAME);
+      helper.setTo(user.getEmail());
+
+      helper.setSubject("Jemigraph Invoice - " + invoice.getInvoiceNumber());
+
+      String customerName = user.getName() != null ? user.getName() : "Customer";
+
+      String htmlContent =
+          """
+				  <html>
+				  <body style="font-family: Arial, sans-serif;
+							   background-color:#f5f7fa;
+							   padding:30px;">
+
+					<div style="max-width:600px;
+								margin:auto;
+								background:#ffffff;
+								border-radius:10px;
+								overflow:hidden;
+								border:1px solid #e5e7eb;">
+
+					  <div style="background:#25632D;
+								  padding:25px;
+								  text-align:center;
+								  color:white;">
+
+						<h2 style="margin:0;">
+						  JEMIGRAPH
+						</h2>
+
+						<p style="margin:8px 0 0;">
+						  Invoice
+						</p>
+
+					  </div>
+
+					  <div style="padding:30px;">
+
+						<h3 style="color:#1f2937;">
+						  Hello %s,
+						</h3>
+
+						<p style="color:#4b5563; line-height:1.6;">
+						  Thank you for choosing Jemigraph.
+						  Please find your invoice attached to this email.
+						</p>
+
+						<div style="background:#f8fafc;
+									border:1px solid #e5e7eb;
+									border-radius:8px;
+									padding:20px;
+									margin:25px 0;">
+
+						  <p>
+							<strong>Invoice Number:</strong> %s
+						  </p>
+
+						  <p>
+							<strong>Amount:</strong> TZS %s
+						  </p>
+
+						  <p>
+							<strong>Due Date:</strong> %s
+						  </p>
+
+						  <p>
+							<strong>Status:</strong> %s
+						  </p>
+
+						</div>
+
+						<p style="color:#4b5563; line-height:1.6;">
+						  Your invoice has been attached as a PDF document.
+						  Please keep it for your records.
+						</p>
+
+						<p style="margin-top:30px;">
+						  Best regards,<br>
+						  <strong>The Jemigraph Team</strong>
+						</p>
+
+					  </div>
+
+					  <div style="background:#f8f9fa;
+								  padding:15px;
+								  text-align:center;
+								  color:#999;
+								  font-size:12px;">
+
+						© 2026 Jemigraph. All rights reserved.
+
+					  </div>
+
+					</div>
+
+				  </body>
+				  </html>
+				  """
+              .formatted(
+                  customerName,
+                  invoice.getInvoiceNumber(),
+                  invoice.getTotalAmount().toPlainString(),
+                  invoice.getDueDate(),
+                  invoice.getStatus().name());
+
+      helper.setText(htmlContent, true);
+
+      helper.addAttachment(invoice.getInvoiceNumber() + ".pdf", new ByteArrayResource(pdf));
+
+      mailSender.send(message);
+
+      log.info("Invoice {} sent successfully to {}", invoice.getInvoiceNumber(), user.getEmail());
+
+    } catch (MessagingException | UnsupportedEncodingException e) {
+
+      log.error("Failed to send invoice {} to {}", invoice.getInvoiceNumber(), user.getEmail(), e);
+
+      throw new RuntimeException("Failed to send invoice email", e);
     }
   }
 

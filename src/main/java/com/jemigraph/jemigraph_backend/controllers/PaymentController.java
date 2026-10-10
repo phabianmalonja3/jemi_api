@@ -2,8 +2,8 @@ package com.jemigraph.jemigraph_backend.controllers;
 
 import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.Payment;
+import com.jemigraph.jemigraph_backend.Entities.PaymentRepository;
 import com.jemigraph.jemigraph_backend.Entities.User;
-import com.jemigraph.jemigraph_backend.enums.PaymentRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.services.AzamPesaService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;

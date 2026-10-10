@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "user_profiles")
-@Data // Inajumuisha @Getter, @RequiredArgsConstructor, @ToString, @EqualsAndHashCode
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
