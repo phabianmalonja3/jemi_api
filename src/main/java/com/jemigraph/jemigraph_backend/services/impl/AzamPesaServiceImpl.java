@@ -121,7 +121,7 @@ public class AzamPesaServiceImpl implements AzamPesaService {
               .referenceNumber(azamTransactionId)
               .userId(user.getId())
               .planId(planId)
-              .invoice(invoice)
+              //              .invoice(invoice)
               .amount(planAmount)
               .transactionId(azamTransactionId)
               .phoneNumber(phoneNumber)
