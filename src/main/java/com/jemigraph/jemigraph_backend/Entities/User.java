@@ -108,6 +108,9 @@ public class User implements UserDetails {
   @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
   private List<Gallery> gallery = new ArrayList<>();
 
+  @Column(name = "last_profile_reminder_at")
+  private LocalDateTime lastProfileReminderAt;
+
   public void setUserProfile(UserProfile userProfile) {
     if (userProfile == null) {
       if (this.userProfile != null) {

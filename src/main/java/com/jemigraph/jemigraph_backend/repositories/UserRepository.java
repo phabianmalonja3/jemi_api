@@ -2,6 +2,7 @@ package com.jemigraph.jemigraph_backend.repositories;
 
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -94,4 +95,51 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   Page<User> findAllByRoleAndPackagesIsNotNullAndAccountNonLockedTrueOrderByAverageRatingDesc(
       UserRole role, Pageable pageable);
+
+  @Query(
+      value =
+          """
+        SELECT u
+        FROM User u
+        WHERE u.role = :role
+          AND u.packages IS NOT EMPTY
+          AND u.location IS NOT NULL
+          AND u.accountNonLocked = true
+        ORDER BY
+          COALESCE(u.averageRating, 0.0) DESC,
+          COALESCE(u.totalReviews, 0) DESC
+        """,
+      countQuery =
+          """
+        SELECT COUNT(u)
+        FROM User u
+        WHERE u.role = :role
+          AND u.packages IS NOT EMPTY
+          AND u.location IS NOT NULL
+          AND u.accountNonLocked = true
+        """)
+  Page<User> findPhotographersWithPackagesAndLocation(
+      @Param("role") UserRole role, Pageable pageable);
+
+  @Query(
+      """
+    SELECT u
+    FROM User u
+    LEFT JOIN FETCH u.userProfile
+    LEFT JOIN FETCH u.location
+    WHERE u.role = :role
+      AND u.accountNonLocked = true
+      AND (
+          u.packages IS EMPTY
+          OR u.location IS NULL
+          OR u.location.latitude IS NULL
+          OR u.location.longitude IS NULL
+      )
+      AND (
+          u.lastProfileReminderAt IS NULL
+          OR u.lastProfileReminderAt <= :reminderBefore
+      )
+    """)
+  List<User> findPhotographersNeedingProfileReminder(
+      @Param("role") UserRole role, @Param("reminderBefore") LocalDateTime reminderBefore);
 }

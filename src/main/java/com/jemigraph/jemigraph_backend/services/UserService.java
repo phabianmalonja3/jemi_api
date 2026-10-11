@@ -151,14 +151,23 @@ public class UserService implements UserDetailsService {
     return userPage.map(photographerMappper::toDto);
   }
 
-  public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
+  //  public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
+  //
+  //    Pageable pageable = PageRequest.of(page, size);
+  //
+  //    Page<User> userPage =
+  //        userRepository
+  //            .findAllByRoleAndPackagesIsNotNullAndAccountNonLockedTrueOrderByAverageRatingDesc(
+  //                UserRole.PHOTOGRAPHER, pageable);
+  //
+  //    return userPage.map(photographerMappper::toDto);
+  //  }
 
+  public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
 
     Page<User> userPage =
-        userRepository
-            .findAllByRoleAndPackagesIsNotNullAndAccountNonLockedTrueOrderByAverageRatingDesc(
-                UserRole.PHOTOGRAPHER, pageable);
+        userRepository.findPhotographersWithPackagesAndLocation(UserRole.PHOTOGRAPHER, pageable);
 
     return userPage.map(photographerMappper::toDto);
   }
