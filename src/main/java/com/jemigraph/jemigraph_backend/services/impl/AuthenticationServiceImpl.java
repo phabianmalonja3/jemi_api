@@ -196,12 +196,12 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   @Transactional
   public RegistrationResponseDTO createUser(RegisterRequestDTO registerRequestDTO) {
     String welcomeMessage =
-            "Karibu Jemigraph! Akaunti yako ya Jemigrapher "
-                    + "imefanikiwa kufunguliwa. Ili uanze kupokea "
-                    + "bookings kutoka kwa wateja, tafadhali kamilisha "
-                    + "profile yako kwa kuweka packages zako pamoja na "
-                    + "location yako kwenye ramani. Tunakutakia mafanikio "
-                    + "katika safari yako ya upigaji picha!";
+        "Karibu Jemigrapher! Akaunti yako ya Jemigrapher "
+            + "imefanikiwa kufunguliwa. Ili uanze kupokea "
+            + "bookings kutoka kwa wateja, tafadhali kamilisha "
+            + "profile yako kwa kuweka packages zako pamoja na "
+            + "location yako kwenye ramani. Tunakutakia mafanikio "
+            + "katika safari yako ya upigaji picha!";
 
     if (userRepository.existsByEmail(registerRequestDTO.getEmail())) {
       throw new UserAlreadyExistsException("Email Already Exist In Our System.");
@@ -244,7 +244,6 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
-
 
       emailServiceAdmin.sendPhotographerApprovalRequest(
           registerRequestDTO.getName(),
