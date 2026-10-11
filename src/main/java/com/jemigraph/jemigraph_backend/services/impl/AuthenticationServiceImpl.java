@@ -46,6 +46,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   private final SubscriptionRepository subscriptionRepository;
   private final SubscriptionPlanRepository subscriptionPlanRepository;
   private final LocationRepository locationRepository;
+  private final SmsService smsService;
 
   @Override
   @Transactional
@@ -237,6 +238,15 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
 
+      String welcomeMessage =
+          "Karibu Jemigraph! Akaunti yako ya Jemigrapher "
+              + "imefanikiwa kufunguliwa. Ili uanze kupokea "
+              + "bookings kutoka kwa wateja, tafadhali kamilisha "
+              + "profile yako kwa kuweka packages zako pamoja na "
+              + "location yako kwenye ramani. Tunakutakia mafanikio "
+              + "katika safari yako ya upigaji picha!";
+
+      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
       emailServiceAdmin.sendPhotographerApprovalRequest(
           registerRequestDTO.getName(),
           registerRequestDTO.getEmail(),
