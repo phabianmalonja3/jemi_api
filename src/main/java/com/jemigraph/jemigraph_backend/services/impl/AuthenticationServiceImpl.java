@@ -197,7 +197,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   public RegistrationResponseDTO createUser(RegisterRequestDTO registerRequestDTO) {
     String welcomeMessage =
         "Karibu Jemigrapher! Akaunti yako ya Jemigrapher "
-            + "imefanikiwa kufunguliwa. Ili uanze kupokea "
+            + "imefanikiwa kufunguliwa . Ili uanze kupokea "
             + "bookings kutoka kwa wateja, tafadhali kamilisha "
             + "profile yako kwa kuweka packages zako pamoja na "
             + "location yako kwenye ramani. Tunakutakia mafanikio "
