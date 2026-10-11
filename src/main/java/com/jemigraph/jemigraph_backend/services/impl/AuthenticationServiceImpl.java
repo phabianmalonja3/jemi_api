@@ -195,6 +195,13 @@ public class AuthenticationServiceImpl implements AuthentificationService {
   @Override
   @Transactional
   public RegistrationResponseDTO createUser(RegisterRequestDTO registerRequestDTO) {
+    String welcomeMessage =
+            "Karibu Jemigraph! Akaunti yako ya Jemigrapher "
+                    + "imefanikiwa kufunguliwa. Ili uanze kupokea "
+                    + "bookings kutoka kwa wateja, tafadhali kamilisha "
+                    + "profile yako kwa kuweka packages zako pamoja na "
+                    + "location yako kwenye ramani. Tunakutakia mafanikio "
+                    + "katika safari yako ya upigaji picha!";
 
     if (userRepository.existsByEmail(registerRequestDTO.getEmail())) {
       throw new UserAlreadyExistsException("Email Already Exist In Our System.");
@@ -238,15 +245,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
       UserProfile savedProfile = userProfileRepository.save(userProfile);
       savedUser.setUserProfile(savedProfile);
 
-      String welcomeMessage =
-          "Karibu Jemigraph! Akaunti yako ya Jemigrapher "
-              + "imefanikiwa kufunguliwa. Ili uanze kupokea "
-              + "bookings kutoka kwa wateja, tafadhali kamilisha "
-              + "profile yako kwa kuweka packages zako pamoja na "
-              + "location yako kwenye ramani. Tunakutakia mafanikio "
-              + "katika safari yako ya upigaji picha!";
 
-      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
       emailServiceAdmin.sendPhotographerApprovalRequest(
           registerRequestDTO.getName(),
           registerRequestDTO.getEmail(),
@@ -301,6 +300,8 @@ public class AuthenticationServiceImpl implements AuthentificationService {
               .expiresAt(now.plusDays(30))
               .build();
       subscriptionRepository.save(subscription);
+      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
+
       emailService.sendAccountActivation(savedUser);
     }
     return registrationMapper.toDto(savedUser);
