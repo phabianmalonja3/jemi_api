@@ -27,7 +27,7 @@ public class PhotographerProfileReminderScheduler {
   private final SmsService smsService;
 
   @Transactional
-  @Scheduled(cron = "0 * * * * *", zone = "Africa/Dar_es_Salaam")
+  @Scheduled(cron = "0 0 3 * * *", zone = "Africa/Dar_es_Salaam")
   public void sendProfileReminders() {
 
     LocalDateTime now = LocalDateTime.now(TANZANIA_ZONE);

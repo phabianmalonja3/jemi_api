@@ -298,11 +298,11 @@ public class AuthenticationServiceImpl implements AuthentificationService {
           subscription.getExpiresAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
       String welcomeMessage =
-          "Karibu Jemigrapher Tour! Umefanikiwa kujisajili "
+          "Karibu Jemigraph Tour! Umefanikiwa kujisajili "
               + "kikamilifu. Umepewa TRIAL ya siku 30 bila malipo, "
               + "inayoisha tarehe "
               + expiryDate
-              + ". Ili uanze "
+              + ". Ili uanze"
               + "kupokea bookings kutoka kwa wateja, kamilisha "
               + "profile yako kwa kuweka packages zako na location "
               + "kwenye ramani. Tunakutakia mafanikio katika safari "
