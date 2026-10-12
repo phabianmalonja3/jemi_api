@@ -110,7 +110,8 @@ public class LiveStatusService {
             user.getName(),
             user.getProfileImageUrl());
         String location = request.getLongitude() + "," + request.getLatitude();
-        redisTemplate.opsForValue().set(key, location, Duration.ofSeconds(35));
+        redisTemplate.opsForValue().set(key, location, Duration.ofHours(1));
+
         redisTemplate
             .opsForGeo()
             .add(
@@ -259,7 +260,7 @@ public class LiveStatusService {
     String location = request.getLongitude() + "," + request.getLatitude();
 
     try {
-      redisTemplate.opsForValue().set(redisKey, location, Duration.ofSeconds(35));
+      redisTemplate.opsForValue().set(redisKey, location, Duration.ofHours(1));
       redisTemplate
           .opsForGeo()
           .add(
@@ -284,7 +285,7 @@ public class LiveStatusService {
         "status",
         "LIVE_EXTENDED",
         "ttl_seconds",
-        35,
+        3600,
         "message",
         "Heartbeat renewed successfully. Live session extended.");
   }
@@ -293,11 +294,8 @@ public class LiveStatusService {
   public void handleExpiredLiveSession(String userId) {
     try {
       User user = userRepository.findById(UUID.fromString(userId)).orElse(null);
-
       if (user == null) return;
-
       if (Boolean.FALSE.equals(user.getIsOnline())) return;
-
       user.setIsOnline(false);
       userRepository.save(user);
       redisTemplate.delete("photographer:online:" + userId);

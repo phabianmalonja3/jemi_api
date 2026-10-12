@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -31,6 +32,7 @@ public class PhotographerController {
 
   private PhotographyPackageMapper photographyPackageMapper;
 
+  @PreAuthorize("hasRole('PHOTOGRAPHER')")
   @PostMapping("/online-status")
   public ResponseEntity<Map<String, Object>> updateStatus(
       @RequestBody LocationUpdateRequest request, Principal principal) {
@@ -99,6 +101,7 @@ public class PhotographerController {
     return ResponseEntity.ok(profileService.getPhotographerById(id));
   }
 
+  @PreAuthorize("hasRole('CLIENT')")
   @GetMapping("/nearby")
   public ResponseEntity<?> getNearby(
       @RequestParam(defaultValue = "0.0") double lat,
@@ -106,6 +109,7 @@ public class PhotographerController {
 
     return ResponseEntity.ok(liveStatusService.getNearbyPhotographers(lat, lng));
   }
+
 
   @GetMapping("/online")
   public ResponseEntity<?> getOnlinePhotographers() {
