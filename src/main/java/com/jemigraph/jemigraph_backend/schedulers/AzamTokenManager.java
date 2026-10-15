@@ -36,7 +36,7 @@ public class AzamTokenManager {
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
-      headers.set("User-Agent", "Jemigraph-Backend-Service"); // Inazuia server kukataa ombi
+      headers.set("User-Agent", "Jemigraph-Backend-Service");
 
       Map<String, String> requestBody = new HashMap<>();
       requestBody.put("appName", azamPesaConfig.getAppName());
@@ -87,7 +87,7 @@ public class AzamTokenManager {
         return;
       }
 
-      String url = azamPesaConfig.getAuthUrl() + "/azampay/v1/public-key?format=Pem";
+      String url = azamPesaConfig.getBaseUrl() + "/azampay/v1/public-key?format=Pem";
 
       HttpHeaders headers = new HttpHeaders();
       headers.setBearerAuth(this.cachedToken);
