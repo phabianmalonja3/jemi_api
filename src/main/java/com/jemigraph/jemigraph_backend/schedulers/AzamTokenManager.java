@@ -97,6 +97,7 @@ public class AzamTokenManager {
 
       if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
         this.cachedPublicKey = (String) response.getBody().get("publicKey");
+        log.info("public keys for validation signtaure :" + response.getBody());
         log.info("AzamPay Public Key imesasishwa na kutunzwa kwenye RAM kwa mafanikio!");
       }
     } catch (Exception e) {

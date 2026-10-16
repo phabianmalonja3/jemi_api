@@ -3,12 +3,11 @@ package com.jemigraph.jemigraph_backend.DTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 @Data
 @Builder
@@ -27,4 +26,6 @@ public class PaymentInitRequestDTO {
 
   @NotBlank(message = "Provider is required (e.g., Tigo, Vodacom, Airtel)")
   private String provider;
+
+  private String email;
 }

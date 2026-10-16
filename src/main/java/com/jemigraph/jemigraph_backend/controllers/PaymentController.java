@@ -73,6 +73,22 @@ public class PaymentController {
     return ResponseEntity.ok(response);
   }
 
+  @PostMapping("/website/pay")
+  public ResponseEntity<MnoCheckoutResponse> initiatePayment(
+      @Valid @RequestBody PaymentInitRequestDTO paymentInitRequestDTO) {
+    User currentUser =
+        userRepository
+            .findByEmail(paymentInitRequestDTO.getEmail())
+            .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+    MnoCheckoutResponse response =
+        azamPesaService.mnoCheckout(
+            currentUser,
+            paymentInitRequestDTO.getPlanId(),
+            paymentInitRequestDTO.getPhoneNumber(),
+            paymentInitRequestDTO.getProvider());
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping("/status/{transactionId}")
   public ResponseEntity<SubscriptionPaymentResponseDTO> getPaymentStatus(
       @PathVariable String transactionId) {
