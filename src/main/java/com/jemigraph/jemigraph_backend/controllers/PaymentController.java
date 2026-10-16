@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/payments")
@@ -79,7 +80,11 @@ public class PaymentController {
     User currentUser =
         userRepository
             .findByEmail(paymentInitRequestDTO.getEmail())
-            .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No Jemigraph account is associated with this email address. Please contact support@jemigraph.co.tz for assistance."));
     MnoCheckoutResponse response =
         azamPesaService.mnoCheckout(
             currentUser,
