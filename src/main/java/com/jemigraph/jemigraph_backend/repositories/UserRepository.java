@@ -121,6 +121,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   Page<User> findPhotographersWithPackagesAndLocation(
       @Param("role") UserRole role, Pageable pageable);
 
+  @Query("SELECT u FROM User u WHERE u.packages IS EMPTY OR u.location IS NULL")
+  Page<User> findUsersWithNoPackagesOrNoLocation(Pageable pageable);
+
   @Query(
       """
     SELECT u

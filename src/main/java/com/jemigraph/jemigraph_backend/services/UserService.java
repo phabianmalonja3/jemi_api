@@ -162,6 +162,12 @@ public class UserService implements UserDetailsService {
   //
   //    return userPage.map(photographerMappper::toDto);
   //  }
+  public Page<PhotographerProfileDTO> getUsersWithNoPackagesOrLocation(int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<User> userPage = userRepository.findUsersWithNoPackagesOrNoLocation(pageable);
+    return userPage.map(photographerMappper::toDto);
+  }
 
   public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);

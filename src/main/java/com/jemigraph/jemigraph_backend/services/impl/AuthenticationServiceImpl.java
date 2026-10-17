@@ -308,7 +308,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
               + "kwenye ramani. Tunakutakia mafanikio katika safari "
               + "yako ya upigaji picha!";
 
-      //      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
+      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
 
       emailService.sendAccountActivation(savedUser);
     }

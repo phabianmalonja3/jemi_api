@@ -49,6 +49,14 @@ public class PhotographerController {
     return ResponseEntity.ok(userService.getPhotographers(page, size, search));
   }
 
+  @GetMapping("/incomplete-profiles")
+  public ResponseEntity<Page<PhotographerProfileDTO>> getIncompleteUsers(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+
+    Page<PhotographerProfileDTO> result = userService.getUsersWithNoPackagesOrLocation(page, size);
+    return ResponseEntity.ok(result);
+  }
+
   @GetMapping("/filter")
   public ResponseEntity<Page<PhotographerProfileDTO>> filterPhotographer(
       @RequestParam(defaultValue = "0") int page,
