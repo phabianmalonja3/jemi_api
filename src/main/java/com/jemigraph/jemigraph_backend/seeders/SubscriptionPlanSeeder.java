@@ -19,7 +19,7 @@ public class SubscriptionPlanSeeder implements CommandLineRunner {
 
     createPlanIfNotExists(
         SubscriptionPlanType.MONTHLY,
-        BigDecimal.valueOf(100),
+        BigDecimal.valueOf(15000),
         "Access to all features for 1 month");
 
     createPlanIfNotExists(

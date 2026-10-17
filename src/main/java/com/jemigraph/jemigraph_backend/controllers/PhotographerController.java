@@ -85,7 +85,7 @@ public class PhotographerController {
 
   @GetMapping("/all")
   public ResponseEntity<Page<PhotographerProfileDTO>> getAllPhotographers(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size) {
     return ResponseEntity.ok(userService.getPhotographersALll(page, size));
   }
 
@@ -109,7 +109,6 @@ public class PhotographerController {
 
     return ResponseEntity.ok(liveStatusService.getNearbyPhotographers(lat, lng));
   }
-
 
   @GetMapping("/online")
   public ResponseEntity<?> getOnlinePhotographers() {
