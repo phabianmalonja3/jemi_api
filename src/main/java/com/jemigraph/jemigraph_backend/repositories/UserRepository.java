@@ -102,7 +102,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         SELECT u
         FROM User u
         WHERE u.role = :role
-
+          AND u.packages IS NOT EMPTY
           AND u.location IS NOT NULL
           AND u.accountNonLocked = true
         ORDER BY
@@ -114,6 +114,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         SELECT COUNT(u)
         FROM User u
         WHERE u.role = :role
+          AND u.packages IS NOT EMPTY
           AND u.location IS NOT NULL
           AND u.accountNonLocked = true
         """)
