@@ -107,7 +107,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
           AND u.accountNonLocked = true
         ORDER BY
           COALESCE(u.averageRating, 0.0) DESC,
-          COALESCE(u.totalReviews, 0) DESC
+          COALESCE(u.totalReviews, 0) DESC,
+          u.id ASC
         """,
       countQuery =
           """
