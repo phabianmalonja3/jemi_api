@@ -18,6 +18,7 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -173,16 +174,19 @@ public class UserService implements UserDetailsService {
   }
 
   public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
-
-    // Change rotation every 5 minutes
-    long rotationInterval = 5 * 60 * 1000L;
-    long rotationSlot = System.currentTimeMillis() / rotationInterval;
-
     Pageable pageable = PageRequest.of(page, size);
 
-    Page<User> userPage =
-        userRepository.findPhotographersWithPackagesAndLocation(UserRole.PHOTOGRAPHER, pageable);
+    List<PhotographerProfileDTO> photographers = rotationScheduler.getRotatedPhotographers();
 
-    return userPage.map(photographerMappper::toDto);
+    int total = photographers.size();
+    int start = (int) pageable.getOffset();
+
+    if (start >= total) {
+      return new PageImpl<>(Collections.emptyList(), pageable, total);
+    }
+
+    int end = Math.min(start + size, total);
+
+    return new PageImpl<>(photographers.subList(start, end), pageable, total);
   }
 }
