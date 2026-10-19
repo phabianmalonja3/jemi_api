@@ -151,6 +151,17 @@ public class UserService implements UserDetailsService {
     return userPage.map(photographerMappper::toDto);
   }
 
+  //  public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
+  //
+  //    Pageable pageable = PageRequest.of(page, size);
+  //
+  //    Page<User> userPage =
+  //        userRepository
+  //            .findAllByRoleAndPackagesIsNotNullAndAccountNonLockedTrueOrderByAverageRatingDesc(
+  //                UserRole.PHOTOGRAPHER, pageable);
+  //
+  //    return userPage.map(photographerMappper::toDto);
+  //  }
   public Page<PhotographerProfileDTO> getUsersWithNoPackagesOrLocation(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
 
@@ -160,9 +171,7 @@ public class UserService implements UserDetailsService {
   }
 
   public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
-
-    int rotation = (int) ((System.currentTimeMillis() / 300_000) % 10);
-    Pageable pageable = PageRequest.of(page + rotation, size);
+    Pageable pageable = PageRequest.of(page, size);
 
     Page<User> userPage =
         userRepository.findPhotographersWithPackagesAndLocation(UserRole.PHOTOGRAPHER, pageable);
