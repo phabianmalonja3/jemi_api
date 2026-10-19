@@ -152,4 +152,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     """)
   List<User> findPhotographersNeedingProfileReminder(
       @Param("role") UserRole role, @Param("reminderBefore") LocalDateTime reminderBefore);
+
+  @Query(
+      """
+    SELECT u
+    FROM User u
+    WHERE u.role = :role
+      AND u.packages IS NOT EMPTY
+      AND u.location IS NOT NULL
+      AND u.accountNonLocked = true
+    ORDER BY
+      COALESCE(u.averageRating, 0.0) DESC,
+      COALESCE(u.totalReviews, 0) DESC,
+      u.id ASC
+    """)
+  List<User> findEligiblePhotographersForRotation(@Param("role") UserRole role);
 }

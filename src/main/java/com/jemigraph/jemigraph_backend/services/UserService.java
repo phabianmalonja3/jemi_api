@@ -32,6 +32,8 @@ public class UserService implements UserDetailsService {
 
   private final UserRepository userRepository;
   private final PhotographerMapper photographerMappper;
+  private final List<User> rotatedPhotographers = List.of();
+  private final int rotationCount = 0;
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
@@ -171,6 +173,11 @@ public class UserService implements UserDetailsService {
   }
 
   public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
+
+    // Change rotation every 5 minutes
+    long rotationInterval = 5 * 60 * 1000L;
+    long rotationSlot = System.currentTimeMillis() / rotationInterval;
+
     Pageable pageable = PageRequest.of(page, size);
 
     Page<User> userPage =
