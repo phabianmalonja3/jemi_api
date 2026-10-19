@@ -6,6 +6,7 @@ import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.mappers.PhotographerMapper;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
+import com.jemigraph.jemigraph_backend.schedulers.PhotographerRotationScheduler;
 import jakarta.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,8 +34,7 @@ public class UserService implements UserDetailsService {
 
   private final UserRepository userRepository;
   private final PhotographerMapper photographerMappper;
-  private final List<User> rotatedPhotographers = List.of();
-  private final int rotationCount = 0;
+  private final PhotographerRotationScheduler rotationScheduler;
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
@@ -174,15 +175,21 @@ public class UserService implements UserDetailsService {
 
   public Page<PhotographerProfileDTO> getTopRatedPhotographers(int page, int size) {
 
-    // Change rotation every 5 minutes
-    long rotationInterval = 5 * 60 * 1000L;
-    long rotationSlot = System.currentTimeMillis() / rotationInterval;
+    List<User> photographers = rotationScheduler.getRotatedPhotographers();
 
     Pageable pageable = PageRequest.of(page, size);
 
-    Page<User> userPage =
-        userRepository.findPhotographersWithPackagesAndLocation(UserRole.PHOTOGRAPHER, pageable);
+    int start = (int) pageable.getOffset();
 
-    return userPage.map(photographerMappper::toDto);
+    if (start >= photographers.size()) {
+      return new PageImpl<>(List.of(), pageable, photographers.size());
+    }
+
+    int end = Math.min(start + size, photographers.size());
+
+    List<PhotographerProfileDTO> content =
+        photographers.subList(start, end).stream().map(photographerMappper::toDto).toList();
+
+    return new PageImpl<>(content, pageable, photographers.size());
   }
 }
