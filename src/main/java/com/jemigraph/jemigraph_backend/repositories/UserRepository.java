@@ -153,6 +153,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   List<User> findPhotographersNeedingProfileReminder(
       @Param("role") UserRole role, @Param("reminderBefore") LocalDateTime reminderBefore);
 
+  @EntityGraph(attributePaths = {"packages", "location"})
   @Query(
       """
     SELECT u
