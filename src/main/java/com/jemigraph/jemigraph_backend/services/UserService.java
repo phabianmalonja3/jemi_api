@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
+import com.jemigraph.jemigraph_backend.DTO.PhotographerProfileCompletionDto;
 import com.jemigraph.jemigraph_backend.DTO.PhotographerProfileDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
 import com.jemigraph.jemigraph_backend.Entities.User;
@@ -188,5 +189,33 @@ public class UserService implements UserDetailsService {
     int end = Math.min(start + size, total);
 
     return new PageImpl<>(photographers.subList(start, end), pageable, total);
+  }
+
+  public PhotographerProfileCompletionDto checkProfileCompletion(String email) {
+
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Photographer not found"));
+
+    boolean hasPackages = user.getPackages() != null && !user.getPackages().isEmpty();
+
+    boolean hasLocation = user.getLocation() != null;
+
+    boolean profileComplete = hasPackages && hasLocation;
+
+    String message;
+
+    if (!hasPackages && !hasLocation) {
+      message = "Please add your packages and location.";
+    } else if (!hasPackages) {
+      message = "Please add your photography packages.";
+    } else if (!hasLocation) {
+      message = "Please set your location.";
+    } else {
+      message = "Your profile is complete.";
+    }
+
+    return new PhotographerProfileCompletionDto(hasLocation, hasPackages, profileComplete, message);
   }
 }

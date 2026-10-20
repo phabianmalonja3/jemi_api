@@ -118,15 +118,12 @@ public class LiveStatusService {
                 REDIS_GEO_KEY,
                 new Point(request.getLongitude(), request.getLatitude()),
                 user.getId().toString());
-
-        log.info("✅ User {} is now LIVE at {}", user.getEmail(), location);
       } else {
         redisTemplate.delete(key);
         redisTemplate.opsForGeo().remove(REDIS_GEO_KEY, user.getId().toString());
-        log.info("📴 User {} is now OFFLINE and removed from Redis", user.getEmail());
+
       }
     } catch (Exception e) {
-      log.error("❌ Redis sync failed for user {}: {}", email, e.getMessage(), e);
       throw new RuntimeException("Failed to update live status in cache", e);
     }
 
@@ -143,7 +140,12 @@ public class LiveStatusService {
   }
 
   public void broadcastPhotographerLocation(
-      UUID userId, double lat, double lng, String name, String profileImage) {
+      UUID userId,
+      double lat,
+      double lng,
+      String name,
+      String profileImage
+  ) {
     Map<String, Object> locationUpdate =
         Map.of(
             "userId", userId.toString(),
@@ -156,8 +158,6 @@ public class LiveStatusService {
   }
 
   public List<Map<String, Object>> getNearbyPhotographers(double lat, double lng) {
-
-    log.info("Searching nearby photographers: lat={}, lng={}", lat, lng);
 
     Circle circle = new Circle(new Point(lng, lat), new Distance(7, Metrics.KILOMETERS));
 
@@ -202,17 +202,13 @@ public class LiveStatusService {
         .map(
             result -> {
               String idStr = result.getContent().getName().toString().trim();
-
               UUID userId;
-
               try {
                 userId = UUID.fromString(idStr);
               } catch (Exception e) {
                 return null;
               }
-
               User user = userMap.get(userId);
-
               if (user == null
                   || user.getLocation() == null
                   || user.getPackages() == null
@@ -220,22 +216,15 @@ public class LiveStatusService {
 
                 return null;
               }
-
               String distanceDisplay = getString(result);
-
               Map<String, Object> map = new LinkedHashMap<>();
-
               map.put("userId", idStr);
-
               map.put("distanceKm", Math.round(result.getDistance().getValue() * 100.0) / 100.0);
-
               map.put("name", user.getName());
               map.put("profileImage", user.getProfileImageUrl());
               map.put("distance", distanceDisplay);
               map.put("isOnline", user.getIsOnline());
-
               map.put("rating", user.getAverageRating() != null ? user.getAverageRating() : 0.0);
-
               return map;
             })
         .filter(Objects::nonNull)
@@ -300,7 +289,7 @@ public class LiveStatusService {
       userRepository.save(user);
       redisTemplate.delete("photographer:online:" + userId);
       redisTemplate.opsForGeo().remove(REDIS_GEO_KEY, userId);
-      log.info("✅ User {} set OFFLINE due to expired Redis key.", user.getEmail());
+
     } catch (Exception e) {
       log.error("❌ Failed to handle expired session for user {}: {}", userId, e.getMessage());
     }

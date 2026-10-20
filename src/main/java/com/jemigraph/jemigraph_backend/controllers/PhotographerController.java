@@ -57,6 +57,13 @@ public class PhotographerController {
     return ResponseEntity.ok(result);
   }
 
+  @GetMapping("/profile-completion")
+  public ResponseEntity<PhotographerProfileCompletionDto> checkProfileCompletion(
+      Principal principal) {
+
+    return ResponseEntity.ok(userService.checkProfileCompletion(principal.getName()));
+  }
+
   @GetMapping("/filter")
   public ResponseEntity<Page<PhotographerProfileDTO>> filterPhotographer(
       @RequestParam(defaultValue = "0") int page,
