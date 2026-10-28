@@ -17,6 +17,18 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
   boolean existsByUserId(UUID userId);
 
+
+
+  @Query("""
+        SELECT s FROM Subscription s
+        WHERE s.status = :status
+          AND s.expiresAt <= :now
+          AND s.user.role = com.jemigraph.jemigraph_backend.enums.UserRole.PHOTOGRAPHER
+        """)
+  List<Subscription> findExpiredPhotographerSubscriptions(
+          @Param("status") SubscriptionStatus status,
+          @Param("now") LocalDateTime now
+  );
   @Query(
       """
         SELECT s
@@ -30,6 +42,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
       @Param("status") SubscriptionStatus status,
       @Param("start") LocalDateTime start,
       @Param("end") LocalDateTime end);
+
+
 
   List<Subscription> findByStatusAndExpiresAtBetween(
       SubscriptionStatus status, LocalDateTime start, LocalDateTime end);
