@@ -309,7 +309,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
               + "yako ya upigaji picha!";
 
 
-
+      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
       emailService.sendAccountActivation(savedUser);
     }
     return registrationMapper.toDto(savedUser);
