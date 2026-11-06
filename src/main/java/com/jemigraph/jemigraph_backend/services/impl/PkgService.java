@@ -57,14 +57,7 @@ public class PkgService {
       throw new RuntimeException("You already have a package with this name.");
     }
 
-    boolean existsByLevel =
-        pkgRepository.existsByPhotographerAndLevel(photographer, request.getLevel());
-    if (existsByLevel) {
-      throw new DuplicatePackageLevelException(
-          String.format(
-              "You already have a %s package. Only one package per level is allowed.",
-              request.getLevel().toString()));
-    }
+
     Pkg pkg = new Pkg();
     pkg.setName(request.getName());
     pkg.setDuration(request.getDuration());

@@ -13,9 +13,7 @@ import lombok.Data;
       @UniqueConstraint(
           name = "uk_photographer_package_name",
           columnNames = {"photographer_id", "name"}),
-      @UniqueConstraint(
-          name = "uk_photographer_package_level",
-          columnNames = {"photographer_id", "package_level"})
+     
     })
 @Data
 public class Pkg {
