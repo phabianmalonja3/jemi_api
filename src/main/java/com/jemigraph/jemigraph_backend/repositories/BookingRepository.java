@@ -2,16 +2,17 @@ package com.jemigraph.jemigraph_backend.repositories;
 
 import com.jemigraph.jemigraph_backend.Entities.Bookings;
 import com.jemigraph.jemigraph_backend.enums.BookingStatus;
-import io.lettuce.core.dynamic.annotation.Param;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Bookings, UUID> {
@@ -33,4 +34,11 @@ public interface BookingRepository extends JpaRepository<Bookings, UUID> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+
+    long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    long countByStatusAndCreatedAtBetween(BookingStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Bookings> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

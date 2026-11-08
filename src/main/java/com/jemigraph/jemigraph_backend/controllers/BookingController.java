@@ -2,6 +2,7 @@ package com.jemigraph.jemigraph_backend.controllers;
 
 import com.jemigraph.jemigraph_backend.DTO.BookingDTO;
 import com.jemigraph.jemigraph_backend.DTO.BookingResponseDTO;
+import com.jemigraph.jemigraph_backend.DTO.BookingStatsDTO;
 import com.jemigraph.jemigraph_backend.Entities.Bookings;
 import com.jemigraph.jemigraph_backend.enums.BookingStatus;
 import com.jemigraph.jemigraph_backend.mappers.BookingMapper;
@@ -27,6 +28,13 @@ public class BookingController {
   private final BookingMapper bookingMapper;
   private final BookingResponseMapper mapper;
 
+
+  @GetMapping("/dashboard/stats")
+  public ResponseEntity<BookingStatsDTO> getDashboardStats(
+          @RequestParam(defaultValue = "24h") String range) {
+    BookingStatsDTO stats = bookingService.getDashboardStats(range);
+    return ResponseEntity.ok(stats);
+  }
   @PostMapping
   public ResponseEntity<?> createBooking(
       @Valid @RequestBody BookingDTO bookingDTO, Principal principal) {

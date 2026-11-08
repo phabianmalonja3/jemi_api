@@ -239,4 +239,42 @@ public class BookingServiceImp implements BookingService {
           return dto;
         });
   }
+
+
+    @Override
+
+    public BookingStatsDTO getDashboardStats(String timeRange) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = switch (timeRange != null ? timeRange.toLowerCase() : "24h") {
+            case "7d" -> endDate.minusDays(7);
+            case "30d" -> endDate.minusDays(30);
+            case "all" -> LocalDateTime.of(2020, 1, 1, 0, 0);
+            default -> endDate.minusHours(24);
+        };
+
+        long total = bookingRepository.countByCreatedAtBetween(startDate, endDate);
+
+        // Tunatumia status zako husika
+        long completed = bookingRepository.countByStatusAndCreatedAtBetween(BookingStatus.COMPLETED, startDate, endDate);
+        long accepted = bookingRepository.countByStatusAndCreatedAtBetween(BookingStatus.ACCEPTED, startDate, endDate);
+        long pending = bookingRepository.countByStatusAndCreatedAtBetween(BookingStatus.PENDING, startDate, endDate);
+        long cancelled = bookingRepository.countByStatusAndCreatedAtBetween(BookingStatus.CANCELLED, startDate, endDate);
+        long inProgress = bookingRepository.countByStatusAndCreatedAtBetween(BookingStatus.IN_PROGRESS, startDate, endDate);
+
+        // Tunaweza kuhesabu 'Successful' kama zile zilizokamilika (COMPLETED) au zilizokubaliwa
+        long successfulBookings = completed + accepted + inProgress;
+
+        double successRate = total > 0 ? ((double) successfulBookings / total) * 100 : 0.0;
+        double cancellationRate = total > 0 ? ((double) cancelled / total) * 100 : 0.0;
+
+        return BookingStatsDTO.builder()
+                .totalBookings(total)
+                .confirmedBookings(successfulBookings) // Hapa unaweza kubadilisha jina la field kwenye DTO kama unataka
+                .pendingBookings(pending)
+                .cancelledBookings(cancelled)
+                .successRate(Math.round(successRate * 100.0) / 100.0)
+                .cancellationRate(Math.round(cancellationRate * 100.0) / 100.0)
+                .build();
+    }
+
 }

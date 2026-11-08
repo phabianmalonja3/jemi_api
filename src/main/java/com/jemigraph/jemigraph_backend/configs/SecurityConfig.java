@@ -91,8 +91,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/photographer/**")
                     .hasRole("PHOTOGRAPHER")
-                    .requestMatchers("/bookings/**")
-                    .authenticated()
+                    .requestMatchers("/bookings/**").permitAll()
+
                     .requestMatchers("/reviews/**")
                     .permitAll()
                     .requestMatchers("/jobs/**")

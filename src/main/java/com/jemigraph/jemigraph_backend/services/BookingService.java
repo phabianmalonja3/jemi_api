@@ -2,6 +2,7 @@ package com.jemigraph.jemigraph_backend.services;
 
 import com.jemigraph.jemigraph_backend.DTO.BookingDTO;
 import com.jemigraph.jemigraph_backend.DTO.BookingResponseDTO;
+import com.jemigraph.jemigraph_backend.DTO.BookingStatsDTO;
 import com.jemigraph.jemigraph_backend.Entities.Bookings;
 import com.jemigraph.jemigraph_backend.enums.BookingStatus;
 import java.time.LocalDateTime;
@@ -27,4 +28,8 @@ public interface BookingService {
             UUID packageId,
             LocalDateTime pickupTime);
     Page<BookingResponseDTO> getAllBookings(Pageable pageable);
+
+    BookingStatsDTO getDashboardStats(String timeRange);
+
+
 }
