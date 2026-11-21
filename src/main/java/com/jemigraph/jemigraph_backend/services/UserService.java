@@ -218,4 +218,5 @@ public class UserService implements UserDetailsService {
 
     return new PhotographerProfileCompletionDto(hasLocation, hasPackages, profileComplete, message);
   }
+
 }
