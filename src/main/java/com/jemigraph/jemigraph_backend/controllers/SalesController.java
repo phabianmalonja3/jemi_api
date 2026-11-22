@@ -19,6 +19,6 @@ public class SalesController {
 	@GetMapping("/bookings")
 	public ResponseEntity<Page<BookingResponseDTO>> getAllBookings(Pageable pageable) {
 		Page<BookingResponseDTO> bookings = bookingService.getAllBookings(pageable);
-		return ResponseEntity.ok(bookings);
+		return ResponseEntity .ok(bookings);
 	}
 }
