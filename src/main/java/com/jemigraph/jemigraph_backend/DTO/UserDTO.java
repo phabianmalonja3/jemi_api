@@ -38,7 +38,7 @@ public class UserDTO {
     private String password;
 
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "ADMIN|PHOTOGRAPHER|CLIENT", message = "Role must be ADMIN, PHOTOGRAPHER, or CLIENT")
+    @Pattern(regexp = "ADMIN|PHOTOGRAPHER|CLIENT|SALES", message = "Role must be ADMIN, PHOTOGRAPHER, or CLIENT")
     private String role;
 
     @Size(max = 20, message = "Phone number must be at most 20 characters")

@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services;
 
+import com.jemigraph.jemigraph_backend.DTO.StaffDTO;
 import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
 import com.jemigraph.jemigraph_backend.Entities.User;
@@ -27,5 +28,6 @@ public interface AdminService {
 
   List<UserDTO> getUnverifiedPhotographers();
 
+  StaffDTO addNewStaff(StaffDTO staffDTO);
   void removeAccount(UUID userId);
 }

@@ -967,10 +967,126 @@ public class EmailServiceImpl implements EmailService {
     }
   }
 
-  @Override
-  @Async
-  public void sendApprovalNotificationToAdmin(
-      String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId) {
+
+	@Async
+	@Override
+	public void sendUserCredentials(String email, String username, String password) {
+
+		try {
+			MimeMessage message = mailSender.createMimeMessage();
+
+			MimeMessageHelper helper =
+					new MimeMessageHelper(message, true, "UTF-8");
+
+			helper.setFrom(FROM_EMAIL, FROM_NAME);
+			helper.setTo(email);
+			helper.setSubject("Your Jemigraph Account Has Been Created");
+
+			String htmlContent = """
+                <html>
+                <body style="font-family: Arial, sans-serif;
+                             background-color: #f4f6f9;
+                             padding: 30px;
+                             color: #333;">
+
+                  <div style="max-width: 600px;
+                              margin: auto;
+                              background: white;
+                              border-radius: 10px;
+                              overflow: hidden;
+                              border: 1px solid #e5e7eb;">
+
+                    <div style="background: #25632D;
+                                padding: 25px;
+                                text-align: center;
+                                color: white;">
+                      <h2>WELCOME TO JEMIGRAPH</h2>
+                    </div>
+
+                    <div style="padding: 30px;">
+
+                      <h3>Hello %s,</h3>
+
+                      <p>
+                        Your Jemigraph account has been successfully
+                        created by the administration team.
+                      </p>
+
+                      <p>
+                        You can now access your account using
+                        the credentials below:
+                      </p>
+
+                      <div style="background: #f8fafc;
+                                  padding: 20px;
+                                  border-radius: 8px;
+                                  border: 1px solid #e5e7eb;">
+
+                        <p><strong>Username:</strong> %s</p>
+
+                        <p><strong>Password:</strong> %s</p>
+
+                      </div>
+
+                      <p style="margin-top: 20px;">
+                        Please log in and set your own password
+                        before using your account.
+                      </p>
+
+                      <div style="text-align: center;
+                                  margin: 25px 0;">
+
+                        <a href="https://jemigraph.co.tz"
+                           style="background: #25632D;
+                                  color: white;
+                                  padding: 12px 25px;
+                                  text-decoration: none;
+                                  border-radius: 6px;
+                                  font-weight: bold;">
+                          LOGIN TO JEMIGRAPH
+                        </a>
+
+                      </div>
+
+                      <p>
+                        If you have any questions, contact our
+                        support team at help@jemigraph.co.tz.
+                      </p>
+
+                      <p>
+                        Best regards,<br>
+                        <strong>The Jemigraph Team</strong>
+                      </p>
+
+                    </div>
+
+                    <div style="background: #f8fafc;
+                                padding: 15px;
+                                text-align: center;
+                                color: #999;
+                                font-size: 12px;">
+                      © 2026 Jemigraph. All rights reserved.
+                    </div>
+
+                  </div>
+                </body>
+                </html>
+                """.formatted(username, username, password);
+
+			helper.setText(htmlContent, true);
+
+			mailSender.send(message);
+
+			log.info("User credentials email sent successfully to {}", email);
+
+		} catch (Exception e) {
+			log.error("Failed to send user credentials to {}: {}", email, e.getMessage(), e);
+		}
+	}
+	@Async
+	@Override
+	public void sendApprovalNotificationToAdmin(
+			String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId) {
 
     try {
       MimeMessage message = mailSender.createMimeMessage();

@@ -134,12 +134,16 @@ public class AuthenticationServiceImpl implements AuthentificationService {
           .refreshToken(jwtRefreshToken)
           .build();
     } else if (user.getRole() == UserRole.ADMIN) {
-      emailService.sendAdminOtp(user.getEmail());
+
+
+      String jwtToken = jwtService.generateRefreshToken(email);
+      String jwtRefreshToken = jwtService.generateRefreshToken(email);
+
 
       return AuthResponse.builder()
           .user(userMapper.toDto(user))
-          .accessToken(null)
-          .refreshToken(null)
+          .accessToken(jwtToken)
+          .refreshToken(jwtRefreshToken)
           .build();
     } else {
 
@@ -312,6 +316,7 @@ public class AuthenticationServiceImpl implements AuthentificationService {
 //      smsService.sendSms(savedUser.getUserProfile().getPhone(), welcomeMessage);
       emailService.sendAccountActivation(savedUser);
     }
+
     return registrationMapper.toDto(savedUser);
   }
 

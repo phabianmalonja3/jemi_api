@@ -1,12 +1,10 @@
 package com.jemigraph.jemigraph_backend.controllers;
 
-import com.jemigraph.jemigraph_backend.DTO.BookingResponseDTO;
-import com.jemigraph.jemigraph_backend.DTO.SubscriberResponseDto;
-import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
-import com.jemigraph.jemigraph_backend.DTO.UserDTO;
+import com.jemigraph.jemigraph_backend.DTO.*;
 import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 
+import com.jemigraph.jemigraph_backend.exceptions.UserAlreadyExistsException;
 import com.jemigraph.jemigraph_backend.services.AdminService;
 import com.jemigraph.jemigraph_backend.services.BookingService;
 import com.jemigraph.jemigraph_backend.services.PaymentSystemService;
@@ -21,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,6 +39,35 @@ public class SystemAdminController {
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Map.of("message", e.getMessage()));
+    }
+  }
+
+  @PostMapping("/add-user")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> addNewUser(@RequestBody StaffDTO staffDTO) {
+    try {
+      StaffDTO createdUser = adminService.addNewStaff(staffDTO);
+
+      return ResponseEntity.status(HttpStatus.CREATED)
+              .body(Map.of(
+                      "success", true,
+                      "message", "User created successfully. Login credentials have been sent to their email.",
+                      "data", createdUser
+              ));
+
+    } catch (UserAlreadyExistsException e) {
+      return ResponseEntity.status(HttpStatus.CONFLICT)
+              .body(Map.of(
+                      "success", false,
+                      "message", e.getMessage()
+              ));
+
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest()
+              .body(Map.of(
+                      "success", false,
+                      "message", e.getMessage()
+              ));
     }
   }
 

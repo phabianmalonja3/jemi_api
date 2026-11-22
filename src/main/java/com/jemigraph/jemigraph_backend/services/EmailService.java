@@ -5,6 +5,8 @@ import com.jemigraph.jemigraph_backend.Entities.User;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,6 +38,10 @@ public interface EmailService {
 
   void sendContactFormReceived(String toEmail, String userName, String subject, String message);
 
+  @Async
+  void sendApprovalNotificationToAdmin(
+          String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId);
+
   void sendSubscriptionActivated(
       String toEmail,
       String userName,
@@ -45,7 +51,5 @@ public interface EmailService {
       String expiryDate);
 
   void sendEmailToAdmin(String s);
-
-  void sendApprovalNotificationToAdmin(
-      String userEmail, String planName, BigDecimal planPrice, int durationDays, UUID requestId);
+  void sendUserCredentials(String email, String username, String password);
 }

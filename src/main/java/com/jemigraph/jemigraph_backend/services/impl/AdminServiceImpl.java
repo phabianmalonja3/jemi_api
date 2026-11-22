@@ -1,5 +1,6 @@
 package com.jemigraph.jemigraph_backend.services.impl;
 
+import com.jemigraph.jemigraph_backend.DTO.StaffDTO;
 import com.jemigraph.jemigraph_backend.DTO.TransactionAdminDTO;
 import com.jemigraph.jemigraph_backend.DTO.UserDTO;
 import com.jemigraph.jemigraph_backend.Entities.Subscription;
@@ -8,12 +9,15 @@ import com.jemigraph.jemigraph_backend.Entities.Wallet;
 import com.jemigraph.jemigraph_backend.enums.UserRole;
 import com.jemigraph.jemigraph_backend.enums.WalletType;
 import com.jemigraph.jemigraph_backend.events.PhotographerVerifiedEvent;
+import com.jemigraph.jemigraph_backend.exceptions.SuperAdminException;
+import com.jemigraph.jemigraph_backend.exceptions.UserAlreadyExistsException;
 import com.jemigraph.jemigraph_backend.mappers.TransactionMapper;
 import com.jemigraph.jemigraph_backend.repositories.SubscriptionRepository;
 import com.jemigraph.jemigraph_backend.repositories.TransactionRepository;
 import com.jemigraph.jemigraph_backend.repositories.UserRepository;
 import com.jemigraph.jemigraph_backend.repositories.WalletRepository;
 import com.jemigraph.jemigraph_backend.services.AdminService;
+import com.jemigraph.jemigraph_backend.services.EmailService;
 import com.jemigraph.jemigraph_backend.services.SmsService;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +27,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +44,8 @@ public class AdminServiceImpl implements AdminService {
   private final ApplicationEventPublisher eventPublisher;
   private final SmsService smsService;
   private final RedisTemplate<String, String> redisTemplate;
-
+  private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
   @Override
   @Transactional(readOnly = true)
   public Page<TransactionAdminDTO> getAllTransactionsForAdmin(Pageable pageable) {
@@ -216,10 +222,56 @@ public class AdminServiceImpl implements AdminService {
         .toList();
   }
 
-  // ============================================================
-  // DELETE ACCOUNT
-  // ============================================================
 
+
+  @Override
+  public StaffDTO addNewStaff(StaffDTO staffDTO) {
+
+    if (userRepository.existsByEmail(staffDTO.getEmail())) {
+      throw new UserAlreadyExistsException(
+              "Email Already Exist In Our System."
+      );
+    }
+
+    UserRole role;
+
+    try {
+      role = UserRole.valueOf(staffDTO.getRole().toUpperCase());
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new IllegalArgumentException("Invalid staff role.");
+    }
+
+    if (role != UserRole.ADMIN && role != UserRole.SALES) {
+      throw new IllegalArgumentException(
+              "Only ADMIN and SALES accounts are allowed."
+      );
+    }
+
+    User createdUser = User.builder()
+            .name(staffDTO.getName())
+            .email(staffDTO.getEmail())
+            .password(passwordEncoder.encode(staffDTO.getPassword()))
+            .role(role)
+            .isVerified(true)
+            .isBusy(false)
+            .isOnline(false)
+            .build();
+
+    User savedUser = userRepository.save(createdUser);
+
+    emailService.sendUserCredentials(
+            savedUser.getEmail(),
+            savedUser.getName(),
+            staffDTO.getPassword()
+    );
+
+    return StaffDTO.builder()
+            .id(savedUser.getId().toString())
+            .name(savedUser.getName())
+            .email(savedUser.getEmail())
+            .role(savedUser.getRole().name())
+            .build();
+  }
   @Override
   public void removeAccount(UUID userId) {
 

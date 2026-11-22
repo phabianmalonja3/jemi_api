@@ -4,5 +4,5 @@ public enum UserRole {
         CLIENT,
         PHOTOGRAPHER,
         ADMIN,
-
+        SALES
 }
